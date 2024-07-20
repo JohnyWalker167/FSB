@@ -51,7 +51,7 @@ STRING_SESSION = os.getenv('STRING_SESSION')
 
 
 MONGO_URL = os.getenv('MONGO_URL')
-MONGO_DB_NAME = "others"
+MONGO_DB_NAME = "movies"
 
 DB_CHANNEL_ID = int(os.getenv('DB_CHANNEL_ID'))
 LOG_CHANNEL_ID = int(os.getenv('LOG_CHANNEL_ID'))
