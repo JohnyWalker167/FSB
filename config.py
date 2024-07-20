@@ -53,6 +53,8 @@ STRING_SESSION = os.getenv('STRING_SESSION')
 MONGO_URL = os.getenv('MONGO_URL')
 MONGO_DB_NAME = "movies"
 
+TMDB_API_KEY = os.getenv('TMDB_API_KEY')
+
 DB_CHANNEL_ID = int(os.getenv('DB_CHANNEL_ID'))
 LOG_CHANNEL_ID = int(os.getenv('LOG_CHANNEL_ID'))
 CAPTION_CHANNEL_ID = int(os.getenv('CAPTION_CHANNEL_ID'))
