@@ -74,10 +74,9 @@ async def extract_movie_info(caption):
         print(e)
     return None, None
 
-async def get_movie_poster(movie_name, release_year, caption):
+async def get_movie_poster(movie_name, release_year):
     tmdb_search_url = f'https://api.themoviedb.org/3/search/multi?api_key={TMDB_API_KEY}&query={movie_name}'
-    season_no, episode_no = await extract_season_episode(caption)
-
+    
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(tmdb_search_url) as search_response:
@@ -104,7 +103,6 @@ async def get_movie_poster(movie_name, release_year, caption):
                         async with session.get(tmdb_movie_image_url) as movie_response:
                             movie_images = await movie_response.json()
  
-
                         # Use the backdrop_path or poster_path
                             poster_path = None
                             if 'backdrops' in movie_images and movie_images['backdrops']:
