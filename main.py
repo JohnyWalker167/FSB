@@ -243,7 +243,7 @@ async def send_msg(client, message):
 
                         await asyncio.sleep(3)
 
-            await message.reply_text("Messages send successfully!")
+        await message.reply_text("Messages send successfully!")
 
     except FloodWait as e:
         await asyncio.sleep(e.value)
