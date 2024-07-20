@@ -51,31 +51,21 @@ async def forward_message_to_new_channel(client, message):
 
         if media:
             caption = message.caption if message.caption else None
-
+            
             if caption:
                 new_caption = await remove_unwanted(caption)
+                movie_name, release_year = await extract_movie_info(new_caption)
+                tmdb_poster_url = await get_movie_poster(movie_name, release_year)
+                # Getting poster
+                logger.info(f"Getting Poster for {movie_name}...")
+                if movie_name and release_year and not tmdb_poster_url:
+                    await app.send_message(LOG_CHANNEL_ID, text=f"no poster found for <code>{movie_name}</code> {release_year}")
+                    await asyncio.sleep(3)
 
-                # Generate file path
-                logger.info(f"Downloading initial part of {file_id}...")
-
-                file_path = await app.download_media(media.file_id)
-
-                # Generate a thumbnail
-                thumbnail_path = await generate_combined_thumbnail(file_path, THUMBNAIL_INTERVALS, GRID_COLUMNS)
-
-                if thumbnail_path:
-                    print(f"Thumbnail generated: {thumbnail_path}")
-                else:
-                    print("Failed to generate thumbnail")   
-
-                file_info = f"🎞️ <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
-
-                await app.send_photo(CAPTION_CHANNEL_ID, thumbnail_path, caption=file_info, has_spoiler =True)
-
-                os.remove(thumbnail_path)
-                os.remove(file_path)
-
-                await asyncio.sleep(3)
+                if tmdb_poster_url:
+                    file_info = f"🎬🍿 <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
+                    await app.send_photo(CAPTION_CHANNEL_ID, tmdb_poster_url, caption=file_info)
+                    await asyncio.sleep(3)
             else:
                 audio_path = await app.download_media(media.file_id)
                 audio_thumb = await get_audio_thumbnail(audio_path)
@@ -162,6 +152,7 @@ async def handle_get_command(client, message):
 # Send Single Command 
 @app.on_message(filters.command("send") & filters.user(OWNER_USERNAME))
 async def send_msg(client, message):
+    custom_thumb = f"downloads/user_photo.jpg"
     try:
         await message.reply_text("send post link")
         tg_link = (await app.listen(message.chat.id)).text
@@ -178,27 +169,8 @@ async def send_msg(client, message):
 
             if caption:
                 new_caption = await remove_unwanted(caption)
-
-                # Generate file path
-                logger.info(f"Downloading initial part of {file_id}...")
-
-                file_path = await app.download_media(media.file_id)
-
-                # Generate a thumbnail
-                thumbnail_path = await generate_combined_thumbnail(file_path, THUMBNAIL_INTERVALS, GRID_COLUMNS)
-
-                if thumbnail_path:
-                    print(f"Thumbnail generated: {thumbnail_path}")
-                else:
-                    print("Failed to generate thumbnail")   
-
-                file_info = f"🎞️ <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
-
-                await app.send_photo(CAPTION_CHANNEL_ID, thumbnail_path, caption=file_info, has_spoiler=True)
-
-                os.remove(thumbnail_path)
-                os.remove(file_path)
-
+                file_info = f"🎬🍿 <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
+                await app.send_photo(CAPTION_CHANNEL_ID, custom_thumb, caption=file_info)
                 await asyncio.sleep(3)
 
             else:
@@ -246,27 +218,18 @@ async def send_msg(client, message):
                     if caption:
                         new_caption = await remove_unwanted(caption)
 
-                        # Generate file path
-                        logger.info(f"Downloading initial part of {file_id}...")
+                        movie_name, release_year = await extract_movie_info(new_caption)
+                        tmdb_poster_url = await get_movie_poster(movie_name, release_year)
+                        # Getting poster
+                        logger.info(f"Getting Poster for {movie_name}...")
+                        if movie_name and release_year and not tmdb_poster_url:
+                            await app.send_message(LOG_CHANNEL_ID, text=f"no poster found for <code>{movie_name}</code> {release_year}")
+                            await asyncio.sleep(3)
 
-                        file_path = await app.download_media(media.file_id)
-
-                        # Generate a thumbnail
-                        thumbnail_path = await generate_combined_thumbnail(file_path, THUMBNAIL_INTERVALS, GRID_COLUMNS)
-
-                        if thumbnail_path:
-                            print(f"Thumbnail generated: {thumbnail_path}")
-                        else:
-                            print("Failed to generate thumbnail")  
-
-                        file_info = f"🎞️ <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
-
-                        await app.send_photo(CAPTION_CHANNEL_ID, thumbnail_path, caption=file_info, has_spoiler=True)
-
-                        os.remove(thumbnail_path)
-                        os.remove(file_path)
-
-                        await asyncio.sleep(3)
+                        if tmdb_poster_url:
+                            file_info = f"🎬🍿 <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
+                            await app.send_photo(CAPTION_CHANNEL_ID, tmdb_poster_url, caption=file_info)
+                            await asyncio.sleep(3)
 
                     else:
                         audio_path = await app.download_media(media.file_id)
@@ -343,6 +306,12 @@ async def handle_help_command(client, message):
         await send_msg.delete()
     except Exception as e:
         logger.error(f"{e}")
+        
+# Set Thumb command
+@app.on_message(filters.photo & filters.user(OWNER_USERNAME))
+async def setthumb_command(client, message):
+    await app.download_media(message.photo.file_id, file_name='user_photo.jpg')
+    await message.delete()
       
 if __name__ == "__main__":
     loop.run_until_complete(main())
