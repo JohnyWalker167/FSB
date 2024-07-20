@@ -63,7 +63,7 @@ async def forward_message_to_new_channel(client, message):
                     await asyncio.sleep(3)
 
                 if tmdb_poster_url:
-                    file_info = f"🎬🍿 <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
+                    file_info = f"🎬 <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
                     await app.send_photo(CAPTION_CHANNEL_ID, tmdb_poster_url, caption=file_info)
                     await asyncio.sleep(3)
             else:
@@ -169,7 +169,7 @@ async def send_msg(client, message):
 
             if caption:
                 new_caption = await remove_unwanted(caption)
-                file_info = f"🎬🍿 <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
+                file_info = f"🎬 <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
                 await app.send_photo(CAPTION_CHANNEL_ID, custom_thumb, caption=file_info)
                 await asyncio.sleep(3)
 
@@ -227,7 +227,7 @@ async def send_msg(client, message):
                             await asyncio.sleep(3)
 
                         if tmdb_poster_url:
-                            file_info = f"🎬🍿 <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
+                            file_info = f"🎬 <b>{new_caption}</b>\n\n🆔 <code>{file_id}</code>"
                             await app.send_photo(CAPTION_CHANNEL_ID, tmdb_poster_url, caption=file_info)
                             await asyncio.sleep(3)
 
