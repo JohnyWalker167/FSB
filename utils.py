@@ -99,10 +99,10 @@ async def get_movie_poster(movie_name, release_year):
                         media_type = result['media_type']
  
                         # Use the backdrop_path or poster_path
-                            poster_path = None
-                            if 'poster_path' in result and result['poster_path']:
-                                poster_path = result['poster_path']
-
+                        poster_path = None
+                        if 'poster_path' in result and result['poster_path']:
+                            poster_path = result['poster_path']
+                            
                             poster_url = f"https://image.tmdb.org/t/p/original{poster_path}"
                             return poster_url
 
