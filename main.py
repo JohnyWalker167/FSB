@@ -130,7 +130,7 @@ async def handle_get_command(client, message):
                 caption = file_message.caption if file_message.caption else None
                 if caption:
                     new_caption = await remove_unwanted(caption.html)
-                    copy_message = await file_message.copy(chat_id=message.chat.id, caption=f"<code>{caption}</code>", parse_mode=enums.ParseMode.HTML)
+                    copy_message = await file_message.copy(chat_id=message.chat.id, caption=f"<code>{new_caption}</code>", parse_mode=enums.ParseMode.HTML)
                 else:
                     copy_message = await file_message.copy(chat_id=message.chat.id)
 
@@ -148,7 +148,7 @@ async def handle_get_command(client, message):
         except FloodWait as f:
             await asyncio.sleep(f.value)
             if caption:
-                copy_message = await file_message.copy(chat_id=message.chat.id, caption=f"<code>{caption}</code>", parse_mode=enums.ParseMode.HTML)
+                copy_message = await file_message.copy(chat_id=message.chat.id, caption=f"<code>{new_caption}</code>", parse_mode=enums.ParseMode.HTML)
             else:
                 copy_message = await file_message.copy(chat_id=message.chat.id)
 
