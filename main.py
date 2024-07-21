@@ -1,5 +1,7 @@
+import uuid
 from utils import *
 from config import *
+from time import time as tm
 from pyrogram import idle
 from pyromod import listen
 from pyrogram.errors import FloodWait
@@ -7,6 +9,7 @@ from pyrogram import Client, filters, enums
 from shorterner import *
 from asyncio import get_event_loop
 from pymongo import MongoClient
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 DOWNLOAD_PATH = "downloads/"
 CHUNK_SIZE = 1024 * 1024 * 200
@@ -20,6 +23,9 @@ MONGO_COLLECTION = "users"
 mongo_client = MongoClient(MONGO_URL)
 mongo_db = mongo_client[MONGO_DB_NAME]
 mongo_collection = mongo_db[MONGO_COLLECTION]
+
+user_data = {}
+TOKEN_TIMEOUT = 7200
 
 app = Client(
     "my_bot",
@@ -41,7 +47,10 @@ user = Client(
 
 async def main():
     async with app, user:
-        await idle() 
+        await idle()
+
+with app:
+    bot_username = (app.get_me()).username
 
 @app.on_message(filters.chat(DB_CHANNEL_ID) & (filters.document | filters.video))
 async def forward_message_to_new_channel(client, message):
@@ -235,7 +244,7 @@ async def send_msg(client, message):
                         audio_path = await app.download_media(media.file_id)
                         audio_thumb = await get_audio_thumbnail(audio_path)
                         
-                        file_info = f"🎧 <code>{media.title}</code>\n🧑‍🎤 <code>{media.performer}</code>\n\n✅ <code>{file_id}</code>"
+                        file_info = f"🎧 <b>{media.title}</b>\n🧑‍🎤 <b>{media.performer}</b>\n\n✅ <code>{file_id}</code>"
 
                         await app.send_photo(CAPTION_CHANNEL_ID, audio_thumb, caption=file_info)
 
@@ -253,12 +262,12 @@ async def send_msg(client, message):
 
 # Delete Commmand
 @app.on_message(filters.command("delete") & filters.user(OWNER_USERNAME))
-async def get_command(client, message):
+async def delete_command(client, message):
     try:
         await message.reply_text("Enter channel_id")
         channel_id = int((await app.listen(message.chat.id)).text)
 
-        await message.reply_text("Enter channel_id")
+        await message.reply_text("Enter count")
         limit = int((await app.listen(message.chat.id)).text)
 
         await app.send_message(channel_id, "Hi")
@@ -312,6 +321,73 @@ async def handle_help_command(client, message):
 async def setthumb_command(client, message):
     await app.download_media(message.photo.file_id, file_name='user_photo.jpg')
     await message.delete()
+
+async def verify_token(user_id, input_token):
+    current_time = tm()
+
+    # Check if the user_id exists in user_data
+    if user_id not in user_data:
+        return 'Token Mismatched ❌' 
+    
+    stored_token = user_data[user_id]['token']
+    if input_token == stored_token:
+        token = str(uuid.uuid4())
+        user_data[user_id] = {"token": token, "time": current_time, "status": "verified"}
+        return f'Token Verified ✅'
+    else:
+        return f'Token Mismatched ❌'
+    
+async def check_access(message, user_id):
+
+    if user_id in user_data:
+        time = user_data[user_id]['time']
+        status = user_data[user_id]['status']
+        expiry = time + TOKEN_TIMEOUT
+        current_time = tm()
+        if current_time < expiry and status == "verified":
+            return True
+        else:
+            button = await update_token(user_id)
+            send_message = await app.send_message(user_id,f'<b>You need to collect your token first 🎟\n(Valid: {get_readable_time(TOKEN_TIMEOUT)})</b>', reply_markup=button)
+            await auto_delete_message(message, send_message)
+    else:
+        button = await genrate_token(user_id)
+        send_message = await app.send_message(user_id,f'<b>You need to collect your token first 🎟\n(Valid: {get_readable_time(TOKEN_TIMEOUT)})</b>', reply_markup=button)
+        await auto_delete_message(message, send_message)
+
+async def update_token(user_id):
+    try:
+        time = user_data[user_id]['time']
+        expiry = time + TOKEN_TIMEOUT
+        if time < expiry:
+            token = user_data[user_id]['token']
+        else:
+            token = str(uuid.uuid4())
+        current_time = tm()
+        user_data[user_id] = {"token": token, "time": current_time, "status": "unverified"}
+        urlshortx = await shorten_url(f'https://telegram.me/{bot_username}?start={token}')
+        tinyurl = await tiny(urlshortx)
+        button = InlineKeyboardMarkup([[InlineKeyboardButton("Collect Token", url=tinyurl)]])
+        return button
+    except Exception as e:
+        logger.error(f"error in update_token: {e}")
+
+async def genrate_token(user_id):
+    try:
+        token = str(uuid.uuid4())
+        current_time = tm()
+        user_data[user_id] = {"token": token, "time": current_time, "status": "unverified"}
+        urlshortx = await shorten_url(f'https://telegram.me/{bot_username}?start={token}')
+        tinyurl = await tiny(urlshortx)
+        button = InlineKeyboardMarkup([[InlineKeyboardButton("Collect Token", url=tinyurl)]])
+        return button
+    except Exception as e:
+        logger.error(f"error in genrate_token: {e}")
+
+async def get_user_link(user: User) -> str:
+    user_id = user.id
+    first_name = user.first_name
+    return f'<a href=tg://user?id={user_id}>{first_name}</a>'
       
 if __name__ == "__main__":
     loop.run_until_complete(main())
