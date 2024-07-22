@@ -298,7 +298,7 @@ async def log_command(client, message):
 async def total_users_command(client, message):
     user_id = message.from_user.id
 
-    total_users = await mongo_collection.count_documents({})
+    total_users = mongo_collection.count_documents({})
     response_text = f"Total number of users in the database: {total_users}"
     reply = await app.send_message(user_id, response_text)
     await auto_delete_message(message, reply)
