@@ -100,7 +100,7 @@ async def get_command(client, message):
      if input_token:
           token_msg = await verify_token(user_id, input_token)
           reply = await message.reply_text(token_msg)
-          await app.send_message(LOG_CHANNEL_ID, f"User🕵️‍♂️{user_link} with 🆔 {user_id} {token_msg}", parse_mode=enums.ParseMode.HTML)
+          await app.send_message(LOG_CHANNEL_ID, f"User🕵️‍♂️{user_link} with 🆔 {user_id} {bot_username}{token_msg}", parse_mode=enums.ParseMode.HTML)
           await auto_delete_message(message, reply)
      else:
         mongo_collection.update_one(
