@@ -13,6 +13,7 @@ from pyrogram.errors import FloodWait
 from status import *
 from asyncio import get_event_loop
 
+loop = get_event_loop()
 
 # Initialize the client with your API key
 imgclient = imgbbpy.SyncClient(IMGBB_API_KEY)
@@ -39,7 +40,19 @@ app = Client(
     workers=1000,
     parse_mode=enums.ParseMode.HTML
 )
- 
+
+user = Client(
+                "userbot",
+                api_id=int(API_ID),
+                api_hash=API_HASH,
+                session_string=STRING_SESSION,
+                no_updates = True
+)
+
+async def main():
+    async with app, user:
+        await idle()
+
 with app:
     bot_username = (app.get_me()).username
 
@@ -280,6 +293,28 @@ async def copy_msg(client, message):
     except Exception as e:
         logger.error(f'{e}')
 
-logger.info("Bot is starting...")
-app.run()
-        
+# Delete Commmand
+@app.on_message(filters.command("delete"))
+async def delete_command(client, message):
+    try:
+        await message.reply_text("Enter channel_id")
+        channel_id = int((await app.listen(message.chat.id)).text)
+
+        await message.reply_text("Enter count")
+        limit = int((await app.listen(message.chat.id)).text)
+
+        await app.send_message(channel_id, "Hi")
+
+        try:
+            async for message in user.get_chat_history(channel_id, limit):
+                await message.delete()
+        except Exception as e:
+            logger.error(f"Error deleting messages: {e}")
+        await user.send_message(channel_id, "done")
+    except Exception as e:
+        logger.error(f"Error : {e}")
+
+if __name__ == "__main__":
+    logger.info("Bot is starting...")
+    loop.run_until_complete(main())
+    logger.info("Bot has stopped.")        
