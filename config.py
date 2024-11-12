@@ -44,6 +44,7 @@ API_HASH = os.getenv('API_HASH')
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 DB_CHANNEL_ID = int(os.getenv('DB_CHANNEL_ID'))
 OWNER_USERNAME = os.getenv('OWNER_USERNAME')
+STRING_SESSION = os.getenv('STRING_SESSION')
 
 IMGBB_API_KEY = os.getenv('IMGBB_API_KEY')
 
