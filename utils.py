@@ -89,13 +89,22 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         ]
         duration = float(subprocess.check_output(duration_cmd).strip())
 
-        # Generate evenly spaced intervals (excluding the very end)
-        intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
+        # Define a single thumbnail interval within the first minute (e.g., 30 seconds)
+        single_thumbnail_interval = min(60, duration)  # Choose 60 seconds or less if video is shorter
 
-        # Variable to store a single thumbnail path before combining
-        single_thumbnail_path = None
+        # Create the single thumbnail exclusively within the first minute
+        single_thumbnail_path = f"{file_path}_thumb_first_minute.jpg"
+        thumbnail_cmd = [
+            'ffmpeg', '-ss', str(single_thumbnail_interval), '-i', file_path, 
+            '-frames:v', '1', single_thumbnail_path, '-y'
+        ]
+        subprocess.run(thumbnail_cmd, capture_output=True, check=True)
+        thumbnails.append(single_thumbnail_path)
 
-        # Create thumbnails at specified intervals
+        # Generate remaining evenly spaced intervals, excluding the very end
+        intervals = [duration * i / (num_thumbnails + 1) for i in range(2, num_thumbnails + 2)]
+
+        # Create thumbnails at the specified intervals
         for i, interval in enumerate(intervals):
             thumbnail_path = f"{file_path}_thumb_{i}.jpg"
             thumbnail_cmd = [
@@ -104,10 +113,6 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
             ]
             subprocess.run(thumbnail_cmd, capture_output=True, check=True)
             thumbnails.append(thumbnail_path)
-
-            # Save the first thumbnail path (or any desired one)
-            if i == 0:  # Change index if you want a different thumbnail
-                single_thumbnail_path = thumbnail_path
 
         # Open all thumbnails and combine them into a grid
         images = [Image.open(thumb) for thumb in thumbnails]
