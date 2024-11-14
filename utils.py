@@ -78,6 +78,7 @@ async def remove_extension(caption):
         return None
 
 async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_columns: int) -> tuple:
+async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_columns: int) -> tuple:
     try:
         # List to store individual thumbnails
         thumbnails = []
@@ -89,22 +90,20 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         ]
         duration = float(subprocess.check_output(duration_cmd).strip())
 
-        # Define a single thumbnail interval within the first minute (e.g., 30 seconds)
-        single_thumbnail_interval = min(60, duration)  # Choose 60 seconds or less if video is shorter
+        # Generate evenly spaced intervals (excluding the very end)
+        intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
 
-        # Create the single thumbnail exclusively within the first minute
-        single_thumbnail_path = f"{file_path}_thumb_first_minute.jpg"
-        thumbnail_cmd = [
-            'ffmpeg', '-ss', str(single_thumbnail_interval), '-i', file_path, 
+        # Variable to store a single thumbnail path from the first 60 seconds
+        single_thumbnail_path = f"{file_path}_single_thumb.jpg"
+        
+        # Generate a single thumbnail from the first 60 seconds
+        single_thumbnail_cmd = [
+            'ffmpeg', '-ss', '58', '-i', file_path, 
             '-frames:v', '1', single_thumbnail_path, '-y'
         ]
-        subprocess.run(thumbnail_cmd, capture_output=True, check=True)
-        thumbnails.append(single_thumbnail_path)
+        subprocess.run(single_thumbnail_cmd, capture_output=True, check=True)
 
-        # Generate remaining evenly spaced intervals, excluding the very end
-        intervals = [duration * i / (num_thumbnails + 1) for i in range(2, num_thumbnails + 2)]
-
-        # Create thumbnails at the specified intervals
+        # Create thumbnails at specified intervals
         for i, interval in enumerate(intervals):
             thumbnail_path = f"{file_path}_thumb_{i}.jpg"
             thumbnail_cmd = [
@@ -136,12 +135,11 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         combined_thumbnail_path = f"{file_path}_combined.jpg"
         combined_image.save(combined_thumbnail_path)
 
-        # Clean up individual thumbnails, except the single_thumbnail_path
+        # Clean up individual thumbnails, except the single thumbnail
         for thumb in thumbnails:
-            if thumb != single_thumbnail_path:
-                os.remove(thumb)
+            os.remove(thumb)
 
-        # Return combined thumbnail path, a single thumbnail path, and duration
+        # Return combined thumbnail path, a single thumbnail path from first 60 seconds, and duration
         return combined_thumbnail_path, single_thumbnail_path, duration
     except Exception as e:
         print(f"Error generating combined thumbnail: {e}")
