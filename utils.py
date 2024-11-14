@@ -78,7 +78,6 @@ async def remove_extension(caption):
         return None
 
 async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_columns: int) -> tuple:
-async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_columns: int) -> tuple:
     try:
         # List to store individual thumbnails
         thumbnails = []
