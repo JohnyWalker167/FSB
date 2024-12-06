@@ -127,7 +127,7 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         return combined_thumbnail_path
     except Exception as e:
         print(f"Error generating combined thumbnail: {e}")
-        return None, None, None
+        return None
 
 
 
