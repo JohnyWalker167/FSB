@@ -1,19 +1,24 @@
-
 import os
 import logging
 from os import environ
+from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 from requests import get as rget
 
+# Configure logging
 LOG_FILE_NAME = "log.txt"
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s - %(levelname)s] - %(name)s - %(message)s",
     datefmt='%d-%b-%y %H:%M:%S',
     handlers=[
-        logging.StreamHandler()  # Only log to console
+        RotatingFileHandler(
+            LOG_FILE_NAME,
+            maxBytes=50000000,
+            backupCount=10
+        ),
+        logging.StreamHandler()
     ]
 )
 logging.getLogger("pyrogram").setLevel(logging.ERROR)
@@ -38,17 +43,26 @@ except:
 
 load_dotenv('config.env', override=True)
 
+#TMDB API 
+TMDB_API_KEY = os.getenv('TMDB_API_KEY')
+
+#IMGBB API 
+IMGBB_API_KEY = os.getenv('IMGBB_API_KEY')
+
 #TELEGRAM API
 API_ID = int(os.getenv('API_ID'))
 API_HASH = os.getenv('API_HASH')
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-DB_CHANNEL_ID = int(os.getenv('DB_CHANNEL_ID'))
-OWNER_USERNAME = os.getenv('OWNER_USERNAME')
+OWNER_ID = int(os.getenv('OWNER_ID'))
 STRING_SESSION = os.getenv('STRING_SESSION')
 
-IMGBB_API_KEY = os.getenv('IMGBB_API_KEY')
+
+DB_CHANNEL_ID = int(os.getenv('DB_CHANNEL_ID'))
+UPDATE_CHANNEL_ID = int(os.getenv('UPDATE_CHANNEL_ID'))
+
 
 #MONGO URI
 MONGO_URI = os.getenv('MONGO_URI')
-MONGO_DB_NAME = "tgfiles"
+MONGO_DB_NAME = os.getenv('MONGO_DB_NAME')
 COLLECTION_NAME = 'details'
+
