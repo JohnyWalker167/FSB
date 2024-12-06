@@ -224,7 +224,7 @@ async def delete_command(client, message):
         file_id = int(id)  # Assuming file_id is a string; adjust if needed.
         file_msg = await bot.get_message(DB_CHANNEL_ID, file_id)
         caption = await remove_extension(file_msg.caption)
-        result = await collection.delete_one({"caption": caption})
+        result = await info_collection.delete_one({"caption": caption})
         
         if result.deleted_count > 0:
                 bot_message = await message.reply_text(f"{caption} deleted successfully.")
