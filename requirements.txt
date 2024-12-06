@@ -1,8 +1,11 @@
 python-dotenv
-pyrofork==2.2.11
+pyrofork
 pyromod==1.5
 TgCrypto
-pymongo
+wget
+requests
+aiohttp
+motor
+tzlocal
+apscheduler
 imgbbpy
-mutagen
-
