@@ -1,14 +1,9 @@
-import os
 import re
 import subprocess
 import asyncio
-from config import logger 
+from config import *
 from PIL import Image
-from mutagen.mp3 import MP3
-from mutagen.flac import FLAC
-from mutagen.mp4 import MP4
-from mutagen.id3 import ID3, APIC
-from mutagen import File as MutagenFile
+
 
 async def remove_unwanted(input_string):
     # Use regex to match .mkv or .mp4 and everything that follows
@@ -27,8 +22,8 @@ async def extract_tg_link(telegram_link):
             return None
     except Exception as e:
         logger.error(e)
-
-
+        return None
+    
 def humanbytes(size):
     # Function to format file size in a human-readable format
     if not size:
@@ -42,14 +37,6 @@ def humanbytes(size):
     f = ('%.2f' % size).rstrip('0').rstrip('.')
     return f"{f} {suffixes[i]}"
 
-async def auto_delete_message(user_message, bot_message):
-    try:
-        await user_message.delete()
-        await asyncio.sleep(60)
-        await bot_message.delete()
-    except Exception as e:
-        logger.error(f"{e}")
-        
 def get_readable_time(seconds: int) -> str:
     result = ""
     (days, remainder) = divmod(seconds, 86400)
@@ -67,6 +54,14 @@ def get_readable_time(seconds: int) -> str:
     seconds = int(seconds)
     result += f" {seconds}s"
     return result
+
+async def auto_delete_message(user_message, bot_message):
+    try:
+        await user_message.delete()
+        await asyncio.sleep(60)
+        await bot_message.delete()
+    except Exception as e:
+        logger.error(f"{e}")
 
 async def remove_extension(caption):
     try:
@@ -91,16 +86,6 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
 
         # Generate evenly spaced intervals (excluding the very end)
         intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
-
-        # Variable to store a single thumbnail path from the first 60 seconds
-        single_thumbnail_path = f"{file_path}_single_thumb.jpg"
-        
-        # Generate a single thumbnail from the first 60 seconds
-        single_thumbnail_cmd = [
-            'ffmpeg', '-ss', '58', '-i', file_path, 
-            '-frames:v', '1', single_thumbnail_path, '-y'
-        ]
-        subprocess.run(single_thumbnail_cmd, capture_output=True, check=True)
 
         # Create thumbnails at specified intervals
         for i, interval in enumerate(intervals):
@@ -139,46 +124,10 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
             os.remove(thumb)
 
         # Return combined thumbnail path, a single thumbnail path from first 60 seconds, and duration
-        return combined_thumbnail_path, single_thumbnail_path, duration
+        return combined_thumbnail_path
     except Exception as e:
         print(f"Error generating combined thumbnail: {e}")
         return None, None, None
 
 
-async def extract_channel_id(telegram_link):
-    try:
-        pattern = re.compile(r'https://t\.me/c/(-?\d+)/(\d+)')
-        match = pattern.match(telegram_link)
-        if match:
-            channel_id = match.group(1)
-            formatted_channel_id = f'-100{channel_id}'
-            return formatted_channel_id
-        else:
-            return None
-    except Exception as e:
-        logger.error(e)
 
-async def get_audio_thumbnail(audio_path, output_dir="downloads"):
-    audio = MutagenFile(audio_path)
-    thumbnail_path = os.path.join(output_dir, "audio_thumbnail.jpg")
-
-    if isinstance(audio, MP3):
-        if audio.tags and isinstance(audio.tags, ID3):
-            for tag in audio.tags.values():
-                if isinstance(tag, APIC):
-                    with open(thumbnail_path, "wb") as img_file:
-                        img_file.write(tag.data)
-                    return thumbnail_path
-    elif isinstance(audio, FLAC):
-        if audio.pictures:
-            with open(thumbnail_path, "wb") as img_file:
-                img_file.write(audio.pictures[0].data)
-            return thumbnail_path
-    elif isinstance(audio, MP4):
-        if audio.tags and 'covr' in audio.tags:
-            cover = audio.tags['covr'][0]
-            with open(thumbnail_path, "wb") as img_file:
-                img_file.write(cover)
-            return thumbnail_path
-    
-    return None
