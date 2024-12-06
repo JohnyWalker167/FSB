@@ -57,46 +57,6 @@ async def start_command(client, message):
         reply = await message.reply_text(f"<b>💐Welcome</b>")
         await auto_delete_message(message, reply)
 
-@bot.on_message(filters.private & (filters.document | filters.video | filters.audio) & filters.user(OWNER_ID))
-async def handle_new_message(client, message):
-    media = message.document or message.video or message.audio
-
-    if media:
-        caption = await remove_unwanted(message.caption if message.caption else media.file_name)
-        file_name = await remove_extension(caption)   
-
-        # Download media with progress updates
-        file_path = await bot.download_media(
-                            message, 
-                            file_name=f"{message.id}", 
-                            progress=progress 
-                        )
-        
-        # Generate thumbnails after downloading
-        screenshots = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
-        if screenshots :
-            logger.info(f"Thumbnail generated: {screenshots}")
-            try:
-                thumb = imgclient.upload(file=f"{screenshots}")
-                os.remove(screenshots)
-
-                document = {
-                    "caption": file_name,
-                    "thumbnail_url": thumb.url,
-                }
-                if thumb:
-                    # Insert into MongoDB
-                    info_collection.insert_one(document)
-                    os.remove(file_path)
-                    # Send the photo to the update channel
-                    await bot.send_photo(
-                        chat_id=UPDATE_CHANNEL_ID,
-                        photo=f"{screenshots}",
-                        caption=f"<b>{file_name}</b>\n\n✅ Now Available."
-                    )                  
-            except Exception as e:
-                await message.reply_text(f'{e}')
-
 async def progress(current, total):
     print(f"\r{current * 100 / total:.1f}%", end="")
 
@@ -121,7 +81,6 @@ async def process_message(client, message):
             logger.info(f"Thumbnail generated: {screenshots}")
             try:
                 thumb = imgclient.upload(file=f"{screenshots}")
-                os.remove(screenshots)
 
                 document = {
                     "caption": file_name,
@@ -137,6 +96,7 @@ async def process_message(client, message):
                         caption=f"<b>{file_name}</b>\n\n✅ Now Available."
                     )    
                     os.remove(file_path)
+                    os.remove(screenshots)
             except Exception as e:
                 await message.reply_text(f'{e}')
 
@@ -197,7 +157,6 @@ async def handle_file(client, message):
                         logger.info(f"Thumbnail generated: {screenshots}")
                         try:
                             thumb = imgclient.upload(file=f"{screenshots}")
-                            os.remove(screenshots)
 
                             document = {
                                 "caption": file_name,
@@ -206,13 +165,14 @@ async def handle_file(client, message):
                             if thumb:
                                 # Insert into MongoDB
                                 info_collection.insert_one(document)
+                                os.remove(file_path)
                                 # Send the photo to the update channel
                                 await bot.send_photo(
                                     chat_id=UPDATE_CHANNEL_ID,
                                     photo=f"{screenshots}",
                                     caption=f"<b>{file_name}</b>\n\n✅ Now Available."
                                 )    
-                                os.remove(file_path)
+                                os.remove(screenshots)
                         except Exception as e:
                             await message.reply_text(f"Error in data update {e}")
                             await asyncio.sleep(3)
