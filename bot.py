@@ -40,6 +40,7 @@ bot = Client(
     parse_mode=enums.ParseMode.HTML
 ).start()
 
+'''
 user = Client(
                 "user",
                 api_id=int(API_ID),
@@ -47,6 +48,7 @@ user = Client(
                 session_string=STRING_SESSION,
                 no_updates = True
 ).start()
+'''
 
 bot_loop = bot.loop
 bot_username = bot.me.username
@@ -129,9 +131,7 @@ async def handle_file(client, message):
         # Get the start and end message IDs
         start_msg_id = int(await get_user_input("Send first post link"))
         end_msg_id = int(await get_user_input("Send end post link"))
-
-        await collection.delete_many({})
-
+        
         batch_size = 199
         for start in range(int(start_msg_id), int(end_msg_id) + 1, batch_size):
             end = min(start + batch_size - 1, int(end_msg_id))
@@ -180,6 +180,7 @@ async def handle_file(client, message):
         bot_message = await message.reply_text(f"An error occurred: {e}")
         await auto_delete_message(message, bot_message)
 
+'''
 @bot.on_message(filters.private & filters.command("delete") & filters.user(OWNER_ID))
 async def handle_file(client, message):
     try:
@@ -194,10 +195,9 @@ async def handle_file(client, message):
         # Get the start and end message IDs
         start_msg_id = int(await get_user_input("Send first post link"))
         end_msg_id = int(await get_user_input("Send end post link"))
-
-        await collection.delete_many({})
-
+        
         batch_size = 199
+        
         for start in range(int(start_msg_id), int(end_msg_id) + 1, batch_size):
             end = min(start + batch_size - 1, int(end_msg_id))
             file_messages = await user.get_messages(UPDATE_CHANNEL_ID, range(start, end + 1))
@@ -210,27 +210,7 @@ async def handle_file(client, message):
     except Exception as e:
         bot_message = await message.reply_text(f"An error occurred: {e}")
         await auto_delete_message(message, bot_message)
-
-@bot.on_message(filters.private & filters.command("update") & filters.user(OWNER_ID))
-async def update_info(client, message):
-    try:
-        # Fetch all documents from the collection
-        cursor = info_collection.find({}, {"caption": 1, "thumbnail_url": 1, "_id": 0})
-
-        async for document in cursor:
-            caption = document.get("caption")
-            thumbnail_url = document.get("thumbnail_url")
-            if caption and thumbnail_url:
-                await asyncio.sleep(3)
-                # Send the photo to the update channel
-                await bot.send_photo(
-                    UPDATE_CHANNEL_ID,
-                    photo=thumbnail_url,
-                    caption=f"<b>{caption}</b>\n\n✅ Now Available."
-                )
-    except Exception as e:
-        await message.reply_text(f"Error in Update Command: {e}")
-
+ '''
 
 @bot.on_message(filters.private & filters.command("del") & filters.user(OWNER_ID))
 async def delete_command(client, message):
@@ -242,21 +222,13 @@ async def delete_command(client, message):
         asyncio.create_task(auto_delete_message(bot_message, user_message))
 
         file_id = int(id)  # Assuming file_id is a string; adjust if needed.
-        result = await collection.delete_one({"file_id": file_id})
+        file_msg = await bot.get_message(DB_CHANNEL_ID, file_id)
+        caption = await remove_extension(file_msg.caption)
+        result = await collection.delete_one({"caption": caption})
         
         if result.deleted_count > 0:
-            try:
-                # Retrieve the message from the channel and delete it
-                file_message = await user.get_messages(DB_CHANNEL_ID, file_id)
-                await file_message.delete()
-                bot_message = await message.reply_text(f"File with ID {file_id} deleted successfully.")
+                bot_message = await message.reply_text(f"{caption} deleted successfully.")
                 await auto_delete_message(message, bot_message)
-            except Exception as del_err:
-                bot_message = await message.reply_text(f"Database record deleted {file_id}, but failed to delete message from Telegram: {del_err}.")
-                await auto_delete_message(message, bot_message)
-        else:
-            bot_message = await message.reply_text(f"No file found with ID {file_id} in the database.")
-            await auto_delete_message(message, bot_message)
     except Exception as e:
         bot_message = await message.reply_text(f"Error: {e}")
         await auto_delete_message(message, bot_message)
