@@ -13,6 +13,9 @@ from asyncio import Queue
 THUMBNAIL_COUNT = 9
 GRID_COLUMNS = 3 # Number of columns in the grid
 
+last_time = time.time()
+last_data = 0
+
 # Initialize the client with your API key
 imgclient = imgbbpy.SyncClient(IMGBB_API_KEY)
 
@@ -154,8 +157,6 @@ async def handle_file(client, message):
                     file_name = await remove_extension(caption)
         
                     # Download media with progress updates
-                    last_time = time.time()
-                    last_data = 0
                     file_path = await bot.download_media(
                                         file_message, 
                                         file_name=f"{file_message.id}", 
