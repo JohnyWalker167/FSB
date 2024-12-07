@@ -60,12 +60,12 @@ async def start_command(client, message):
         reply = await message.reply_text(f"<b>💐Welcome</b>")
         await auto_delete_message(message, reply)
 
-async def progress(current, total, data_size_mb):
+async def progress(current, total):
     global last_time, last_data
     current_time = time.time()
     elapsed_time = current_time - last_time
-    data_transferred = (current - last_data) * data_size_mb
-    speed_mbps = (data_transferred / elapsed_time) * 8 if elapsed_time > 0 else 0 
+    data_transferred = current - last_data
+    speed_mbps = (data_transferred / (1024 * 1024)) * 8 / elapsed_time if elapsed_time > 0 else 0
 
     last_time = current_time
     last_data = current
@@ -159,7 +159,7 @@ async def handle_file(client, message):
                     file_path = await bot.download_media(
                                         file_message, 
                                         file_name=f"{file_message.id}", 
-                                        progress=progress(current, total, last_data) 
+                                        progress=progress
                                     )
                     
                     # Generate thumbnails after downloading
