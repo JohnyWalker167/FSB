@@ -1,6 +1,7 @@
 import os
 import asyncio
 import imgbbpy
+import time
 from tzlocal import get_localzone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import Client, enums, filters
@@ -8,6 +9,8 @@ from config import *
 from utility import *
 from motor.motor_asyncio import AsyncIOMotorClient 
 from asyncio import Queue
+
+last_update = {"current": 0, "time": time.time()}
 
 THUMBNAIL_COUNT = 9
 GRID_COLUMNS = 3 # Number of columns in the grid
@@ -60,7 +63,22 @@ async def start_command(client, message):
         await auto_delete_message(message, reply)
 
 async def progress(current, total):
-    print(f"\r{current * 100 / total:.1f}%", end="")
+    global last_update
+    
+    now = time.time()
+    elapsed_time = now - last_update["time"]
+    if elapsed_time > 0:
+        speed = (current - last_update["current"]) / elapsed_time  # Bytes per second
+        speed_str = f"{speed / 1024:.2f} KB/s" if speed < 1024 ** 2 else f"{speed / (1024 ** 2):.2f} MB/s"
+    else:
+        speed_str = "Calculating..."
+    
+    percentage = current * 100 / total
+    print(f"\r{percentage:.1f}% | Speed: {speed_str}", end="")
+    
+    # Update last progress details
+    last_update["current"] = current
+    last_update["time"] = now
 
 async def process_message(client, message):
     media = message.document or message.video or message.audio
