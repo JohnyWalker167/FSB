@@ -194,7 +194,7 @@ async def handle_file(client, message):
                         except Exception as e:
                             await message.reply_text(f"Error in data update {e}")
                             await asyncio.sleep(3)
-           await message.reply_text(f"✅ Update Completed ")
+          await message.reply_text(f"✅ Update Completed ")
     except Exception as e:
         bot_message = await message.reply_text(f"An error occurred: {e}")
         await auto_delete_message(message, bot_message)
