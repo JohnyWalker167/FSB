@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 import imgbbpy
 from tzlocal import get_localzone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -59,8 +60,17 @@ async def start_command(client, message):
         reply = await message.reply_text(f"<b>💐Welcome</b>")
         await auto_delete_message(message, reply)
 
-async def progress(current, total):
-    print(f"\r{current * 100 / total:.1f}%", end="")
+async def progress(current, total, data_size_mb):
+    global last_time, last_data
+    current_time = time.time()
+    elapsed_time = current_time - last_time
+    data_transferred = (current - last_data) * data_size_mb
+    speed_mbps = (data_transferred / elapsed_time) * 8 if elapsed_time > 0 else 0 
+
+    last_time = current_time
+    last_data = current
+    
+    print(f"\rProgress: {current * 100 / total:.1f}% | Speed: {speed_mbps:.2f} Mbps", end="")
 
 async def process_message(client, message):
     media = message.document or message.video or message.audio
@@ -144,6 +154,8 @@ async def handle_file(client, message):
                     file_name = await remove_extension(caption)
         
                     # Download media with progress updates
+                    last_time = time.time()
+                    last_data = 0
                     file_path = await bot.download_media(
                                         file_message, 
                                         file_name=f"{file_message.id}", 
