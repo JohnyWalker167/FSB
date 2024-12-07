@@ -1,6 +1,5 @@
 import os
 import asyncio
-import time
 import imgbbpy
 from tzlocal import get_localzone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -12,8 +11,6 @@ from asyncio import Queue
 
 THUMBNAIL_COUNT = 9
 GRID_COLUMNS = 3 # Number of columns in the grid
-
-last_time = time.time()
 
 # Initialize the client with your API key
 imgclient = imgbbpy.SyncClient(IMGBB_API_KEY)
@@ -63,44 +60,7 @@ async def start_command(client, message):
         await auto_delete_message(message, reply)
 
 async def progress(current, total):
-    global last_time
-    current_time = time.time()
-    
-    # Calculate time difference
-    diff = current_time - last_time
-    if diff > 0:  # Avoid division by zero
-        # Calculate percentage
-        percentage = current * 100 / total
-        
-        # Calculate speed in bytes per second and convert to Mbps
-        speed = current / diff
-        speed_mbps = (speed / (1024 * 1024)) * 8  # Convert bytes to MB and MB to Mbps
-        
-        # Calculate elapsed time in milliseconds
-        elapsed_time = round(diff * 1000)
-        
-        # Calculate time to completion in milliseconds
-        time_to_completion = round((total - current) / speed) * 1000
-        
-        # Calculate estimated total time in milliseconds
-        estimated_total_time = elapsed_time + time_to_completion
-    else:
-        percentage = 0
-        speed_mbps = 0
-        elapsed_time = 0
-        time_to_completion = 0
-        estimated_total_time = 0
-    
-    # Update last_time for the next call
-    last_time = current_time
-    
-    # Display progress details
-    print(
-        f"\rProgress: {percentage:.1f}% | Speed: {speed_mbps:.2f} Mbps | "
-        f"Elapsed Time: {elapsed_time} ms | Time to Completion: {time_to_completion} ms | "
-        f"Estimated Total Time: {estimated_total_time} ms",
-        end=""
-    )
+    print(f"\r{current * 100 / total:.1f}%", end="")
 
 async def process_message(client, message):
     media = message.document or message.video or message.audio
@@ -113,7 +73,7 @@ async def process_message(client, message):
         file_path = await bot.download_media(
                             message, 
                             file_name=f"{message.id}", 
-                            progress=progress
+                            progress=progress 
                         )
         
         # Generate thumbnails after downloading
@@ -187,7 +147,7 @@ async def handle_file(client, message):
                     file_path = await bot.download_media(
                                         file_message, 
                                         file_name=f"{file_message.id}", 
-                                        progress=progress
+                                        progress=progress 
                                     )
                     
                     # Generate thumbnails after downloading
