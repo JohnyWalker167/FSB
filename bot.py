@@ -67,9 +67,14 @@ async def progress(current, total):
     global last_time, last_data
     current_time = time.time()
     elapsed_time = current_time - last_time
-    data_transferred = current - last_data
-    speed_mbps = (data_transferred / (1024 * 1024)) * 8 / elapsed_time if elapsed_time > 0 else 0
-
+    if elapsed_time > 0:  # Avoid division by zero
+        # Calculate data transferred in MB (bytes to MB = bytes / (1024 * 1024))
+        data_transferred_mb = (current - last_data) / (1024 * 1024)
+        
+        # Calculate speed in Mbps (MB/s * 8 = Mbps)
+        speed_mbps = (data_transferred_mb / elapsed_time) * 8
+    else:
+        speed_mbps = 0
     last_time = current_time
     last_data = current
     
