@@ -83,7 +83,7 @@ async def process_message(client, message):
         file_path = await bot.download_media(
                             message, 
                             file_name=f"{message.id}", 
-                            progress=progress 
+                            progress=progress
                         )
         
         # Generate thumbnails after downloading
@@ -159,7 +159,7 @@ async def handle_file(client, message):
                     file_path = await bot.download_media(
                                         file_message, 
                                         file_name=f"{file_message.id}", 
-                                        progress=progress 
+                                        progress=progress(last_data) 
                                     )
                     
                     # Generate thumbnails after downloading
