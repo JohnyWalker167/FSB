@@ -101,7 +101,7 @@ async def process_message(client, message):
         if thumbnail:
             await bot.send_video(DB_CHANNEL_ID, 
                                  video=file_path, 
-                                 caption=f"<code>{escape(caption)}</code>", 
+                                 caption=f"<b>{escape(caption)}</b>", 
                                  duration=duration, 
                                  width=480, 
                                  height=320, 
