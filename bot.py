@@ -105,7 +105,8 @@ async def process_message(client, message):
                                  duration=duration, 
                                  width=480, 
                                  height=320, 
-                                 thumb=f"{thumbnail}"
+                                 thumb=f"{thumbnail}",
+                                 progress=progress
                                  )
             os.remove(thumbnail)            
 
@@ -189,7 +190,7 @@ async def handle_file(client, message):
                                     )
                     
                     # Generate thumbnails after downloading
-                    screenshots = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
+                    screenshots, thumbnail, duration = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
 
                     if screenshots :
                         logger.info(f"Thumbnail generated: {screenshots}")
