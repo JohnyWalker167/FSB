@@ -8,6 +8,7 @@ from pyrogram import Client, enums, filters
 from config import *
 from utility import *
 from motor.motor_asyncio import AsyncIOMotorClient 
+from html import escape
 from asyncio import Queue
 
 last_update = {"current": 0, "time": time.time()}
@@ -95,7 +96,18 @@ async def process_message(client, message):
                         )
         
         # Generate thumbnails after downloading
-        screenshots = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
+        screenshots, thumbnail, duration = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
+
+        if thumbnail:
+            await bot.send_video(DB_CHANNEL_ID, 
+                                 video=file_path, 
+                                 caption=f"<code>{escape(caption)}</code>", 
+                                 duration=duration, 
+                                 width=480, 
+                                 height=320, 
+                                 thumb=f"{thumbnail}"
+                                 )
+            os.remove(thumbnail)            
 
         if screenshots :
             logger.info(f"Thumbnail generated: {screenshots}")
@@ -120,11 +132,19 @@ async def process_message(client, message):
             except Exception as e:
                 await message.reply_text(f'{e}')
 
+@bot.on_message(filters.private & (filters.document | filters.video | filters.audio) & filters.user(OWNER_ID))
+async def handle_new_message(client, message):
+    # Add the message to the queue for sequential processing
+    await message_queue.put(message)
+    
+'''
 # Modify the on_message handler to enqueue the messages
 @bot.on_message(filters.chat(DB_CHANNEL_ID) & (filters.document | filters.video | filters.audio))
 async def handle_new_message(client, message):
     # Add the message to the queue for sequential processing
     await message_queue.put(message)
+
+'''
 
 # Function to process the queue in sequence
 async def process_queue():
