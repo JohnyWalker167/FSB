@@ -92,7 +92,7 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
             thumbnail_path = f"{file_path}_thumb_{i}.jpg"
             thumbnail_cmd = [
                 'ffmpeg', '-ss', str(interval), '-i', file_path, 
-                '-frames:v', '1', thumbnail_path, '-y'
+                '-vf', 'thumbnail', '-frames:v', '1', thumbnail_path, '-y'
             ]
             subprocess.run(thumbnail_cmd, capture_output=True, check=True)
             thumbnails.append(thumbnail_path)
