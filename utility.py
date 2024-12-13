@@ -92,8 +92,8 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
 
         # Generate a single thumbnail from the first 60 seconds
         single_thumbnail_cmd = [
-            'ffmpeg', '-ss', '58', '-i', file_path, 
-            '-frames:v', '1', single_thumbnail_path, '-y'
+            'ffmpeg', '-ss', '58', '-i', file_path, '-vframes', '1', '-vf', 'thumbnail',
+            single_thumbnail_path, '-y'
         ]
         subprocess.run(single_thumbnail_cmd, capture_output=True, check=True)
 
