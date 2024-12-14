@@ -81,6 +81,11 @@ async def progress(current, total):
     last_update["current"] = current
     last_update["time"] = now
 
+def reset_progress_tracker():
+    """Reset the progress tracker to its initial state."""
+    global last_update
+    last_update = {"current": 0, "time": time.time()}
+
 async def process_message(client, message):
     media = message.document or message.video or message.audio
 
@@ -99,6 +104,8 @@ async def process_message(client, message):
         screenshots, thumbnail, duration = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
 
         if thumbnail:
+            reset_progress_tracker()
+            print("Now Uploading")
             await bot.send_video(DB_CHANNEL_ID, 
                                  video=file_path, 
                                  caption=f"<b>{escape(caption)}</b>", 
