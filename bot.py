@@ -4,12 +4,16 @@ import imgbbpy
 import time
 from tzlocal import get_localzone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from pyrogram import Client, enums, filters
+from pyrogram import Client, enums, filters, utils as pyroutils
 from config import *
 from utility import *
+from inspect import signature
 from motor.motor_asyncio import AsyncIOMotorClient 
 from html import escape
 from asyncio import Queue
+
+pyroutils.MIN_CHAT_ID = -999999999999
+pyroutils.MIN_CHANNEL_ID = -100999999999999
 
 last_update = {"current": 0, "time": time.time()}
 
@@ -34,6 +38,10 @@ collection = db[COLLECTION_NAME]
 mongo_collection = db[MONGO_COLLECTION]
 info_collection = db[PHOTO_COLLECTION]
 
+def wztgClient(*args, **kwargs):
+    if 'max_concurrent_transmissions' in signature(tgClient.__init__).parameters:
+        kwargs['max_concurrent_transmissions'] = 1000
+    return tgClient(*args, **kwargs)
 
 bot = Client(
     "bot",
