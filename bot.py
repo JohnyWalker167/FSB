@@ -113,7 +113,7 @@ async def process_message(client, message):
 
         if thumbnail:
             reset_progress_tracker()
-            print("Now Uploading")
+            print(f"\n Now Uploading")
             await bot.send_video(DB_CHANNEL_ID, 
                                  video=file_path, 
                                  caption=f"<b>{escape(caption)}</b>", 
