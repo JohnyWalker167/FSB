@@ -122,29 +122,25 @@ async def process_message(client, message):
                                  height=320, 
                                  thumb=f"{thumbnail}",
                                  progress=progress
-                                 )
-            os.remove(thumbnail)            
+                                 )          
 
         if screenshots :
             logger.info(f"Thumbnail generated: {screenshots}")
             try:
-                thumb = imgclient.upload(file=f"{screenshots}")
-
+                ss = imgclient.upload(file=f"{screenshots}")
+                thumb = imgclient.upload(file=f"{thumbnail}")
+                
                 document = {
-                    "caption": file_name,
-                    "thumbnail_url": thumb.url,
+                    "file_name": file_name,
+                    "thumbnail_url": ss.url,
+                    "screenshot_url": thumb.url
                 }
                 if thumb:
                     # Insert into MongoDB
                     info_collection.insert_one(document)
-                    # Send the photo to the update channel
-                    await bot.send_photo(
-                        chat_id=UPDATE_CHANNEL_ID,
-                        photo=f"{screenshots}",
-                        caption=f"<b>{file_name}</b>\n\n✅ Now Available."
-                    )    
                     os.remove(file_path)
                     os.remove(screenshots)
+                    os.remove(thumbnail)  
             except Exception as e:
                 await message.reply_text(f'{e}')
 
