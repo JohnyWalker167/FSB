@@ -206,23 +206,20 @@ async def handle_file(client, message):
                     if screenshots :
                         logger.info(f"Thumbnail generated: {screenshots}")
                         try:
-                            thumb = imgclient.upload(file=f"{screenshots}")
-
+                            ss = imgclient.upload(file=f"{screenshots}")
+                            thumb = imgclient.upload(file=f"{thumbnail}")
+                            
                             document = {
-                                "caption": file_name,
-                                "thumbnail_url": thumb.url,
+                                "file_name": file_name,
+                                "thumbnail_url": ss.url,
+                                "screenshot_url": thumb.url
                             }
                             if thumb:
                                 # Insert into MongoDB
                                 info_collection.insert_one(document)
                                 os.remove(file_path)
-                                # Send the photo to the update channel
-                                await bot.send_photo(
-                                    chat_id=UPDATE_CHANNEL_ID,
-                                    photo=f"{screenshots}",
-                                    caption=f"<b>{file_name}</b>\n\n✅ Now Available."
-                                )    
                                 os.remove(screenshots)
+                                os.remove(thumbnail)  
                         except Exception as e:
                             await message.reply_text(f"Error in data update {e}")
                             await asyncio.sleep(3)
@@ -262,27 +259,6 @@ async def handle_file(client, message):
         bot_message = await message.reply_text(f"An error occurred: {e}")
         await auto_delete_message(message, bot_message)
  '''
-
-@bot.on_message(filters.private & filters.command("del") & filters.user(OWNER_ID))
-async def delete_command(client, message):
-    try:               
-        bot_message = await message.reply_text("Send file link")
-        user_message = await bot.listen(message.chat.id)
-        user_file_link = user_message.text.strip()
-        id = await extract_tg_link(user_file_link)
-        asyncio.create_task(auto_delete_message(bot_message, user_message))
-
-        file_id = int(id)  # Assuming file_id is a string; adjust if needed.
-        file_msg = await bot.get_message(DB_CHANNEL_ID, file_id)
-        caption = await remove_extension(file_msg.caption)
-        result = await info_collection.delete_one({"caption": caption})
-        
-        if result.deleted_count > 0:
-                bot_message = await message.reply_text(f"{caption} deleted successfully.")
-                await auto_delete_message(message, bot_message)
-    except Exception as e:
-        bot_message = await message.reply_text(f"Error: {e}")
-        await auto_delete_message(message, bot_message)
 
 # Get Log Command
 @bot.on_message(filters.command("log") & filters.user(OWNER_ID))
