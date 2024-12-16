@@ -235,8 +235,8 @@ async def handle_file(client, message):
                     file_name = await remove_extension(caption)
 
                     # Set title and artist only if the media is audio
-                    title = media.title if message.audio else None
-                    artist = media.performer if message.audio else None
+                    title = media.title if file_message.audio else None
+                    artist = media.performer if file_message.audio else None
 
                     # Check if the file_name already exists in the database
                     existing_document = await info_collection.find_one({"file_name": file_name})
