@@ -146,8 +146,8 @@ async def process_message(client, message):
                         
                         document = {
                             "file_name": file_name,
-                            "thumbnail_url": ss.url,
-                            "screenshot_url": thumb.url
+                            "thumbnail_url": thumb.url,
+                            "screenshot_url": ss.url
                         }
                         if thumb:
                             # Insert into MongoDB
@@ -264,8 +264,8 @@ async def handle_file(client, message):
                                     
                                     document = {
                                         "file_name": file_name,
-                                        "thumbnail_url": ss.url,
-                                        "screenshot_url": thumb.url
+                                        "thumbnail_url": thumb.url,
+                                        "screenshot_url": ss.url
                                     }
                                     if thumb:
                                         # Insert into MongoDB
