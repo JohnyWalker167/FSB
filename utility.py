@@ -92,6 +92,15 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         # Generate evenly spaced intervals (excluding the very end)
         intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
 
+        single_thumbnail_path = f"{file_path}_single_thumb.jpg"
+        
+        # Generate a single thumbnail from the first 60 seconds
+        single_thumbnail_cmd = [
+            'ffmpeg', '-ss', '60', '-i', file_path, 
+            '-vf', 'thumbnail', '-frames:v', '1', single_thumbnail_path, '-y'
+        ]
+        subprocess.run(single_thumbnail_cmd, capture_output=True, check=True)
+
         # Create thumbnails at specified intervals
         for i, interval in enumerate(intervals):
             thumbnail_path = f"{file_path}_thumb_{i}.jpg"
@@ -101,9 +110,6 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
             ]
             subprocess.run(thumbnail_cmd, capture_output=True, check=True)
             thumbnails.append(thumbnail_path)
-
-        # Use the first generated thumbnail as the single thumbnail
-        single_thumbnail_path = thumbnails[0]
 
         # Open all thumbnails and combine them into a grid
         images = [Image.open(thumb) for thumb in thumbnails]
@@ -128,7 +134,7 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         combined_image.save(combined_thumbnail_path)
 
         # Clean up individual thumbnails, except the single thumbnail
-        for thumb in thumbnails[1:]:
+        for thumb in thumbnails:
             os.remove(thumb)
 
         # Return combined thumbnail path, the single thumbnail path, and duration
