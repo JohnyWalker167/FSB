@@ -259,8 +259,8 @@ async def handle_file(client, message):
                             if screenshots :
                                 logger.info(f"Thumbnail generated: {screenshots}")
                                 try:
-                                    ss = imgclient.upload(file=f"{screenshots}")
-                                    thumb = imgclient.upload(file=f"{thumbnail}")
+                                    ss = imgclient.upload(file=f"{screenshots}", name=file_name)
+                                    thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
                                     
                                     document = {
                                         "file_name": file_name,
