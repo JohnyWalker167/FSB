@@ -141,15 +141,15 @@ async def process_message(client, message):
                 if screenshots :
                     logger.info(f"Thumbnail generated: {screenshots}")
                     try:
-                        ss = imgclient.upload(file=f"{screenshots}", filename=file_name)
-                        thumb = imgclient.upload(file=f"{thumbnail}", filename=file_name)
+                        ss = imgclient.upload(file=f"{screenshots}")
+                        thumb = imgclient.upload(file=f"{thumbnail}")
                         
                         document = {
                             "file_name": file_name,
                             "thumbnail_url": thumb.url,
                             "screenshot_url": ss.url
                         }
-                        if thumb:
+                        if thumb and ss:
                             # Insert into MongoDB
                             info_collection.insert_one(document)
                             os.remove(file_path)
@@ -259,15 +259,15 @@ async def handle_file(client, message):
                             if screenshots :
                                 logger.info(f"Thumbnail generated: {screenshots}")
                                 try:
-                                    ss = imgclient.upload(file=f"{screenshots}", filename=file_name)
-                                    thumb = imgclient.upload(file=f"{thumbnail}", filename=file_name)
+                                    ss = imgclient.upload(file=f"{screenshots}")
+                                    thumb = imgclient.upload(file=f"{thumbnail}")
                                     
                                     document = {
                                         "file_name": file_name,
                                         "thumbnail_url": thumb.url,
                                         "screenshot_url": ss.url
                                     }
-                                    if thumb:
+                                    if thumb and ss:
                                         # Insert into MongoDB
                                         info_collection.insert_one(document)
                                         os.remove(file_path)
