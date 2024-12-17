@@ -142,7 +142,7 @@ async def process_message(client, message):
                     logger.info(f"Thumbnail generated: {screenshots}")
                     try:
                         ss = imgclient.upload(file=f"{screenshots}", filename=file_name)
-                        thumb = imgclient.upload(file=f"{thumbnail}" filename=file_name)
+                        thumb = imgclient.upload(file=f"{thumbnail}", filename=file_name)
                         
                         document = {
                             "file_name": file_name,
