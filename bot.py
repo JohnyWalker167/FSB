@@ -97,7 +97,7 @@ def reset_progress_tracker():
     last_update = {"current": 0, "time": time.time()}
 
 async def process_message(client, message):
-    media = message.document or message.video or message.audio
+    media = message.document or message.video
 
     if media:
         caption = await remove_unwanted(message.caption if message.caption else media.file_name)
@@ -114,7 +114,8 @@ async def process_message(client, message):
             await message.reply_text(f"Duplicate file detected. The file '<code>{file_name}</code>' already exists in the database.")
             return
         else:
-            if message.video:
+            if message.video or message.document:
+                reset_progress_tracker()
                 # Download media with progress updates
                 file_path = await bot.download_media(
                                     message, 
@@ -157,33 +158,6 @@ async def process_message(client, message):
                             os.remove(thumbnail)  
                     except Exception as e:
                         await message.reply_text(f'{e}')    
-            if message.audio:
-                # Download media with progress updates
-                file_path = await bot.download_media(
-                                    message, 
-                                    file_name=f"{message.id}", 
-                                    progress=progress 
-                                )
-                thumb_path = await get_audio_thumbnail(file_path)
-                if thumb_path :
-                    logger.info(f"Thumbnail generated: {thumb_path}")
-                    try:
-                        thumb = imgclient.upload(file=thumb_path)
-
-                        document = {
-                                        "file_name": file_name,
-                                        "title": title,
-                                        "artist": artist,
-                                        "thumbnail_url": thumb.url,
-                                        "screenshot_url": thumb.url
-                                    }                       
-                        if thumb:
-                            # Insert into MongoDB
-                            info_collection.insert_one(document)
-                            os.remove(file_path)
-                            os.remove(thumb_path)
-                    except Exception as e:
-                        await message.reply_text(f'{e}')  
   
 @bot.on_message(filters.private & (filters.document | filters.video | filters.audio) & filters.user(OWNER_ID))
 async def handle_new_message(client, message):
