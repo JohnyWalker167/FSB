@@ -38,7 +38,6 @@ mongo_client = AsyncIOMotorClient(MONGO_URI)  # Use AsyncIOMotorClient
 db = mongo_client[MONGO_DB_NAME]
 collection = db[COLLECTION_NAME]
 mongo_collection = db[MONGO_COLLECTION]
-info_collection = db[PHOTO_COLLECTION]
 
 def wztgClient(*args, **kwargs):
     if 'max_concurrent_transmissions' in signature(Client.__init__).parameters:
@@ -102,13 +101,11 @@ async def process_message(client, message):
     if media:
         caption = await remove_unwanted(message.caption if message.caption else media.file_name)
         file_name = await remove_extension(caption)
-
-        # Set title and artist only if the media is audio
-        title = media.title if message.audio else None
-        artist = media.performer if message.audio else None
+        file_size = humanbytes(media.file_size)
+        timestamp = media.date
 
         # Check if the file_name already exists in the database
-        existing_document = await info_collection.find_one({"file_name": file_name})
+        existing_document = await collection.find_one({"file_name": file_name})
 
         if existing_document:
             await message.reply_text(f"Duplicate file detected. The file '<code>{file_name}</code>' already exists in the database.")
@@ -123,13 +120,14 @@ async def process_message(client, message):
                                     progress=progress 
                                 )
                 
+                
                 # Generate thumbnails after downloading
                 screenshots, thumbnail, duration = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
 
                 if thumbnail:
                     reset_progress_tracker()
                     print(f"\n Now Uploading")
-                    await bot.send_video(DB_CHANNEL_ID, 
+                    send_msg = await bot.send_video(DB_CHANNEL_ID, 
                                             video=file_path, 
                                             caption=f"<b>{escape(caption)}</b>", 
                                             duration=duration, 
@@ -142,20 +140,22 @@ async def process_message(client, message):
                 if screenshots :
                     logger.info(f"Thumbnail generated: {screenshots}")
                     try:
-                        ss = imgclient.upload(file=f"{screenshots}")
-                        thumb = imgclient.upload(file=f"{thumbnail}")
+                        thumb = imgclient.upload(file=f"{screenshots}", name=file_name)
                         
                         document = {
+                            "file_id": send_msg.id,
                             "file_name": file_name,
-                            "thumbnail_url": thumb.url,
-                            "screenshot_url": ss.url
+                            "thumb_url": thumb.url,
+                            "file_size": file_size,
+                            "timestamp": timestamp
                         }
-                        if thumb and ss:
+                        if thumb:
                             # Insert into MongoDB
-                            info_collection.insert_one(document)
+                            collection.insert_one(document)
                             os.remove(file_path)
                             os.remove(screenshots)
                             os.remove(thumbnail)  
+
                     except Exception as e:
                         await message.reply_text(f'{e}')    
   
@@ -207,76 +207,47 @@ async def handle_file(client, message):
                 if media:
                     caption = await remove_unwanted(file_message.caption if file_message.caption else media.file_name)
                     file_name = await remove_extension(caption)
-
-                    # Set title and artist only if the media is audio
-                    title = media.title if file_message.audio else None
-                    artist = media.performer if file_message.audio else None
+                    file_size = humanbytes(media.file_size)
+                    timestamp = media.date
 
                     # Check if the file_name already exists in the database
-                    existing_document = await info_collection.find_one({"file_name": file_name})
+                    existing_document = await collection.find_one({"file_name": file_name})
 
                     if existing_document:
                         await message.reply_text(f"Duplicate file detected. The file '<code>{file_name}</code>' already exists in the database.")
                         continue
                     else:
-                        if file_message.video:           
-                            # Download media with progress updates
-                            file_path = await bot.download_media(
-                                                file_message, 
-                                                file_name=f"{file_message.id}", 
-                                                progress=progress 
-                                            )
+                        # Download media with progress updates
+                        file_path = await bot.download_media(
+                                            file_message, 
+                                            file_name=f"{file_message.id}", 
+                                            progress=progress 
+                                        )
                     
-                            # Generate thumbnails after downloading
-                            screenshots, thumbnail, duration = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
+                        # Generate thumbnails after downloading
+                        screenshots, thumbnail, duration = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
 
-                            if screenshots :
-                                logger.info(f"Thumbnail generated: {screenshots}")
-                                try:
-                                    ss = imgclient.upload(file=f"{screenshots}", name=file_name)
-                                    thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
-                                    
-                                    document = {
-                                        "file_name": file_name,
-                                        "thumbnail_url": thumb.url,
-                                        "screenshot_url": ss.url
-                                    }
-                                    if thumb and ss:
-                                        # Insert into MongoDB
-                                        info_collection.insert_one(document)
-                                        os.remove(file_path)
-                                        os.remove(screenshots)
-                                        os.remove(thumbnail)  
-                                except Exception as e:
-                                    await message.reply_text(f"Error in data update {e}")
-                                    await asyncio.sleep(3)
-                        if file_message.audio:
-                            # Download media with progress updates
-                            file_path = await bot.download_media(
-                                                file_message, 
-                                                file_name=f"{file_message.id}", 
-                                                progress=progress 
-                                            )
-                            thumb_path = await get_audio_thumbnail(file_path)
-                            if thumb_path :
-                                logger.info(f"Thumbnail generated: {thumb_path}")
-                                try:
-                                    thumb = imgclient.upload(file=thumb_path)
-
-                                    document = {
-                                                    "file_name": file_name,
-                                                    "title": title,
-                                                    "artist": artist,
-                                                    "thumbnail_url": thumb.url,
-                                                    "screenshot_url": thumb.url
-                                                }                       
-                                    if thumb:
-                                        # Insert into MongoDB
-                                        info_collection.insert_one(document)
-                                        os.remove(file_path)
-                                        os.remove(thumb_path)
-                                except Exception as e:
-                                    await message.reply_text(f'{e}')  
+                        if screenshots :
+                            logger.info(f"Thumbnail generated: {screenshots}")
+                            try:
+                                thumb = imgclient.upload(file=f"{screenshots}", name=file_name)
+                                
+                                document = {
+                                    "file_id": file_message.id,
+                                    "file_name": file_name,
+                                    "thumb_url": thumb.url,
+                                    "file_size": file_size,
+                                    "timestamp": timestamp
+                                }
+                                if thumb:
+                                    # Insert into MongoDB
+                                    collection.insert_one(document)
+                                    os.remove(file_path)
+                                    os.remove(screenshots)
+                                    os.remove(thumbnail)  
+                            except Exception as e:
+                                await message.reply_text(f"Error in data update {e}")
+                                await asyncio.sleep(3)
 
         await message.reply_text(f"✅ Update Completed ")
     except Exception as e:
