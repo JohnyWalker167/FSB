@@ -152,6 +152,9 @@ async def process_message(client, message):
                         if thumb:
                             # Insert into MongoDB
                             collection.insert_one(document)
+                            await bot.send_photo(UPDATE_CHANNEL_ID, photo=f"{thumbnail}", 
+                                                 caption=f"<b>{file_name}</b>\n\n<b>Now Avaiable!</b> ✅"
+                                                )
                             os.remove(file_path)
                             os.remove(screenshots)
                             os.remove(thumbnail)  
@@ -240,8 +243,10 @@ async def handle_file(client, message):
                                     "timestamp": timestamp
                                 }
                                 if thumb:
-                                    # Insert into MongoDB
-                                    collection.insert_one(document)
+                                    # Insert into MongoDB                                    collection.insert_one(document)
+                                    await bot.send_photo(UPDATE_CHANNEL_ID, photo=f"{thumbnail}", 
+                                                         caption=f"<b>{file_name}</b>\n\n<b>Now Avaiable!</b> ✅"
+                                                        )
                                     os.remove(file_path)
                                     os.remove(screenshots)
                                     os.remove(thumbnail)  
