@@ -236,11 +236,13 @@ async def handle_file(client, message):
                             logger.info(f"Thumbnail generated: {screenshots}")
                             try:
                                 thumb = imgclient.upload(file=f"{screenshots}", name=file_name)
+                                tg_thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
                                 
                                 document = {
                                     "file_id": file_message.id,
                                     "file_name": file_name,
                                     "thumb_url": thumb.url,
+                                    "tg_thumb_url: tg_thumb.url,
                                     "file_size": file_size,
                                     "timestamp": timestamp
                                 }
