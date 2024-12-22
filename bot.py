@@ -140,14 +140,14 @@ async def process_message(client, message):
                 if screenshots :
                     logger.info(f"Thumbnail generated: {screenshots}")
                     try:
-                        thumb = imgclient.upload(file=f"{screenshots}", name=file_name)
-                        tg_thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
+                        ss = imgclient.upload(file=f"{screenshots}", name=file_name)
+                        thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
                         
                         document = {
                             "file_id": send_msg.id,
                             "file_name": file_name,
                             "thumb_url": thumb.url,
-                            "tg_thumb_url: tg_thumb.url,
+                            "ss_url: ss.url,
                             "file_size": file_size,
                             "timestamp": timestamp
                         }
@@ -235,14 +235,14 @@ async def handle_file(client, message):
                         if screenshots :
                             logger.info(f"Thumbnail generated: {screenshots}")
                             try:
-                                thumb = imgclient.upload(file=f"{screenshots}", name=file_name)
-                                tg_thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
+                                ss = imgclient.upload(file=f"{screenshots}", name=file_name)
+                                thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
                                 
                                 document = {
                                     "file_id": file_message.id,
                                     "file_name": file_name,
                                     "thumb_url": thumb.url,
-                                    "tg_thumb_url: tg_thumb.url,
+                                    "ss: ss.url,
                                     "file_size": file_size,
                                     "timestamp": timestamp
                                 }
