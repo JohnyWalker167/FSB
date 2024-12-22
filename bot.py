@@ -141,6 +141,7 @@ async def process_message(client, message):
                     logger.info(f"Thumbnail generated: {screenshots}")
                     try:
                         ss = imgclient.upload(file=f"{screenshots}", name=file_name)
+                        await asyncio.sleep(3)
                         thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
                         
                         document = {
@@ -237,6 +238,7 @@ async def handle_file(client, message):
                             logger.info(f"Thumbnail generated: {screenshots}")
                             try:
                                 ss = imgclient.upload(file=f"{screenshots}", name=file_name)
+                                await asyncio.sleep(3)
                                 thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
                                 
                                 document = {
