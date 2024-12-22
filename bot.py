@@ -147,7 +147,7 @@ async def process_message(client, message):
                             "file_id": send_msg.id,
                             "file_name": file_name,
                             "thumb_url": thumb.url,
-                            "ss_url: ss.url,
+                            "ss_url": ss.url,
                             "file_size": file_size,
                             "timestamp": timestamp
                         }
@@ -242,7 +242,7 @@ async def handle_file(client, message):
                                     "file_id": file_message.id,
                                     "file_name": file_name,
                                     "thumb_url": thumb.url,
-                                    "ss: ss.url,
+                                    "ss_url": ss.url,
                                     "file_size": file_size,
                                     "timestamp": timestamp
                                 }
