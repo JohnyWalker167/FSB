@@ -163,11 +163,12 @@ async def process_message(client, message):
 
                     except Exception as e:
                         await message.reply_text(f'{e}')    
-  
+'''  
 @bot.on_message(filters.private & (filters.document | filters.video | filters.audio) & filters.user(OWNER_ID))
 async def handle_new_message(client, message):
     # Add the message to the queue for sequential processing
     await message_queue.put(message)
+'''
     
 '''
 # Modify the on_message handler to enqueue the messages
