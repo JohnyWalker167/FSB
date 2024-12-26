@@ -102,7 +102,7 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
 
         # Generate evenly spaced intervals with randomness
         base_intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
-        intervals = [max(0, min(duration, interval + random.uniform(-60, 60))) for interval in base_intervals]
+        intervals = [max(0, min(duration, interval + random.uniform(-120, 120))) for interval in base_intervals]
 
         # Create thumbnails at specified intervals
         for i, interval in enumerate(intervals):
