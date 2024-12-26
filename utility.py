@@ -1,4 +1,5 @@
 import re
+import random
 import subprocess
 import asyncio
 from config import *
@@ -87,7 +88,6 @@ async def remove_extension(caption):
         ]
         subprocess.run(single_thumbnail_cmd, capture_output=True, check=True)
 '''
-
 async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_columns: int) -> tuple:
     try:
         # List to store individual thumbnails
@@ -100,9 +100,9 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         ]
         duration = float(subprocess.check_output(duration_cmd).strip())
 
-
-        # Generate evenly spaced intervals (excluding the very end)
-        intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
+        # Generate evenly spaced intervals with randomness
+        base_intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
+        intervals = [max(0, min(duration, interval + random.uniform(-60, 60))) for interval in base_intervals]
 
         # Create thumbnails at specified intervals
         for i, interval in enumerate(intervals):
@@ -136,11 +136,11 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         combined_thumbnail_path = f"{file_path}_combined.jpg"
         combined_image.save(combined_thumbnail_path)
 
-        # Clean up individual thumbnails, except the single thumbnail
+        # Clean up individual thumbnails
         for thumb in thumbnails:
             os.remove(thumb)
 
-        # Return combined thumbnail path, the single thumbnail path, and duration
+        # Return combined thumbnail path
         return combined_thumbnail_path
     except Exception as e:
         print(f"Error generating combined thumbnail: {e}")
