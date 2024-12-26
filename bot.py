@@ -232,7 +232,7 @@ async def handle_file(client, message):
                                         )
                     
                         # Generate thumbnails after downloading
-                        screenshots, thumbnail, duration = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
+                        screenshots, duration = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
 
                         if screenshots :
                             logger.info(f"Thumbnail generated: {screenshots}")
@@ -244,7 +244,6 @@ async def handle_file(client, message):
                                 document = {
                                     "file_id": file_message.id,
                                     "file_name": file_name,
-                                    "thumb_url": thumb.url,
                                     "ss_url": ss.url,
                                     "file_size": file_size,
                                     "timestamp": timestamp
