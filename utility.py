@@ -81,7 +81,7 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
     try:
         # List to store individual thumbnails
         thumbnails = []
-
+        
         # Use ffprobe to get video duration
         duration_cmd = [
             'ffprobe', '-v', 'error', '-show_entries', 'format=duration', 
@@ -89,9 +89,10 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         ]
         duration = float(subprocess.check_output(duration_cmd).strip())
 
+
         # Generate evenly spaced intervals (excluding the very end)
         intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
-
+'''
         single_thumbnail_path = f"{file_path}_single_thumb.jpg"
         
         # Generate a single thumbnail from the first 60 seconds
@@ -100,7 +101,7 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
             '-vf', 'thumbnail', '-frames:v', '1', single_thumbnail_path, '-y'
         ]
         subprocess.run(single_thumbnail_cmd, capture_output=True, check=True)
-
+'''
         # Create thumbnails at specified intervals
         for i, interval in enumerate(intervals):
             thumbnail_path = f"{file_path}_thumb_{i}.jpg"
@@ -138,10 +139,10 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
             os.remove(thumb)
 
         # Return combined thumbnail path, the single thumbnail path, and duration
-        return combined_thumbnail_path, single_thumbnail_path, duration
+        return combined_thumbnail_path
     except Exception as e:
         print(f"Error generating combined thumbnail: {e}")
-        return None, None, None
+        return None
 
 async def get_audio_thumbnail(audio_path, output_dir="downloads"):
     audio = MutagenFile(audio_path)
