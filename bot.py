@@ -249,7 +249,7 @@ async def handle_file(client, message):
                                 if ss:
                                     # Insert into MongoDB  
                                     collection.insert_one(document)
-                                    await bot.send_photo(UPDATE_CHANNEL_ID, photo=f"{thumbnail}", 
+                                    await bot.send_photo(UPDATE_CHANNEL_ID, photo=f"{screenshots}", 
                                                          caption=f"<b>{file_name}</b>\n\n<b>Now Avaiable!</b> ✅"
                                                         )
                                     os.remove(file_path)
