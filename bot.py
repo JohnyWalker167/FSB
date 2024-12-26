@@ -232,15 +232,13 @@ async def handle_file(client, message):
                                         )
                     
                         # Generate thumbnails after downloading
-                        screenshots, duration = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
+                        screenshots = await generate_combined_thumbnail(file_path, THUMBNAIL_COUNT, GRID_COLUMNS)
 
                         if screenshots :
                             logger.info(f"Thumbnail generated: {screenshots}")
                             try:
                                 ss = imgclient.upload(file=f"{screenshots}", name=file_name)
-                                await asyncio.sleep(3)
-                                thumb = imgclient.upload(file=f"{thumbnail}", name=file_name)
-                                
+                                await asyncio.sleep(3)                                           
                                 document = {
                                     "file_id": file_message.id,
                                     "file_name": file_name,
@@ -248,15 +246,14 @@ async def handle_file(client, message):
                                     "file_size": file_size,
                                     "timestamp": timestamp
                                 }
-                                if thumb:
+                                if ss:
                                     # Insert into MongoDB  
                                     collection.insert_one(document)
                                     await bot.send_photo(UPDATE_CHANNEL_ID, photo=f"{thumbnail}", 
                                                          caption=f"<b>{file_name}</b>\n\n<b>Now Avaiable!</b> ✅"
                                                         )
                                     os.remove(file_path)
-                                    os.remove(screenshots)
-                                    os.remove(thumbnail)  
+                                    os.remove(screenshots) 
                             except Exception as e:
                                 await message.reply_text(f"Error in data update {e}")
                                 await asyncio.sleep(3)
