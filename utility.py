@@ -1,4 +1,6 @@
 import re
+import random
+import hashlib
 import subprocess
 import asyncio
 from config import *
@@ -100,9 +102,13 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
         ]
         duration = float(subprocess.check_output(duration_cmd).strip())
 
+        # Generate a unique seed based on the file path
+        seed = int(hashlib.sha256(file_path.encode()).hexdigest(), 16) % (10**8)
+        random.seed(seed)
 
-        # Generate evenly spaced intervals (excluding the very end)
-        intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
+        # Generate evenly spaced intervals with random offsets
+        base_intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
+        intervals = [max(0, min(duration, interval + random.uniform(-1, 1))) for interval in base_intervals]
 
         # Create thumbnails at specified intervals
         for i, interval in enumerate(intervals):
