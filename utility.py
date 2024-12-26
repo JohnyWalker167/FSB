@@ -77,6 +77,17 @@ async def remove_extension(caption):
         logger.error(e)
         return None
 
+'''
+        single_thumbnail_path = f"{file_path}_single_thumb.jpg"
+        
+        # Generate a single thumbnail from the first 60 seconds
+        single_thumbnail_cmd = [
+            'ffmpeg', '-ss', '60', '-i', file_path, 
+            '-vf', 'thumbnail', '-frames:v', '1', single_thumbnail_path, '-y'
+        ]
+        subprocess.run(single_thumbnail_cmd, capture_output=True, check=True)
+'''
+
 async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_columns: int) -> tuple:
     try:
         # List to store individual thumbnails
@@ -92,16 +103,7 @@ async def generate_combined_thumbnail(file_path: str, num_thumbnails: int, grid_
 
         # Generate evenly spaced intervals (excluding the very end)
         intervals = [duration * i / (num_thumbnails + 1) for i in range(1, num_thumbnails + 1)]
-'''
-        single_thumbnail_path = f"{file_path}_single_thumb.jpg"
-        
-        # Generate a single thumbnail from the first 60 seconds
-        single_thumbnail_cmd = [
-            'ffmpeg', '-ss', '60', '-i', file_path, 
-            '-vf', 'thumbnail', '-frames:v', '1', single_thumbnail_path, '-y'
-        ]
-        subprocess.run(single_thumbnail_cmd, capture_output=True, check=True)
-'''
+
         # Create thumbnails at specified intervals
         for i, interval in enumerate(intervals):
             thumbnail_path = f"{file_path}_thumb_{i}.jpg"
