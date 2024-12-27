@@ -19,7 +19,7 @@ pyroutils.MIN_CHANNEL_ID = -100999999999999
 
 last_update = {"current": 0, "time": time.time()}
 
-THUMBNAIL_COUNT = 9
+THUMBNAIL_COUNT = 15
 GRID_COLUMNS = 3 # Number of columns in the grid
 
 # Initialize the client with your API key
