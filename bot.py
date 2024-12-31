@@ -6,8 +6,7 @@ import imgbbpy
 import time
 from io import BytesIO
 from tzlocal import get_localzone
-from aiofiles import remove as aioremove
-from asyncio import run_coroutine_threadsafe
+from aiofiles.os import remove as aioremove
 from functools import partial
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import Client, enums, filters, utils as pyroutils
@@ -18,14 +17,11 @@ from inspect import signature
 from motor.motor_asyncio import AsyncIOMotorClient 
 from html import escape
 from asyncio import Queue
-from concurrent.futures import ThreadPoolExecutor
 
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
 
 last_update = {"current": 0, "time": time.time()}
-
-THREADPOOL = ThreadPoolExecutor(max_workers = 1000)
 
 THUMBNAIL_COUNT = 9
 GRID_COLUMNS = 3 # Number of columns in the grid
@@ -74,12 +70,6 @@ user = Client(
 bot_loop = bot.loop
 bot_username = bot.me.username
 AsyncIOScheduler(timezone = str(get_localzone()), event_loop = bot_loop)
-
-
-async def sync_to_async(func, *args, wait=True, **kwargs):
-    pfunc = partial(func, *args, **kwargs)
-    future = bot_loop.run_in_executor(THREADPOOL, pfunc)
-    return await future if wait else future
 
 @bot.on_message(filters.private & filters.command("start"))
 async def start_command(client, message):
