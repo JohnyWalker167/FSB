@@ -5,7 +5,7 @@ import imgbbpy
 import time
 import requests
 from os import path as ospath
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image
 from io import BytesIO
 from tzlocal import get_localzone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -320,56 +320,33 @@ async def log_command(client, message):
 @bot.on_message(filters.command("thumb") & filters.user(OWNER_ID))
 async def thumb_command(client, message):
     try:
-        # Ask user to send a thumbnail link
-        bot_message = await message.reply_text('Send the thumbnail image link.')
-
-        # Listen for the user's response
+        bot_message = await message.reply_text('send thumbnail')
+        # Listen for a photo message from the same user
         user_message = await bot.listen(message.chat.id)  # Without filters argument
         image_link = user_message.text.strip()
-
-        # Fetch the image from the provided link
         response = requests.get(image_link)
         input_image = Image.open(BytesIO(response.content))
+        # Resize the image to fit within 320x320 while maintaining aspect ratio
+        thumbnail_size = (320, 320)
+        input_image.thumbnail(thumbnail_size, Image.Resampling.LANCZOS)
 
-        # Resize the image to fit 320x320 while maintaining aspect ratio
-        target_size = (320, 320)
-        input_image = input_image.resize(target_size, Image.Resampling.LANCZOS)
+        # Create a new blank canvas with white background
+        canvas = Image.new('RGB', thumbnail_size, 'white')
 
-        # Create a mask for rounded corners
-        mask = Image.new("L", target_size, 0)
-        draw = ImageDraw.Draw(mask)
-        corner_radius = 40  # Adjust for desired corner roundness
-        draw.rounded_rectangle(
-            [(0, 0), target_size],
-            radius=corner_radius,
-            fill=255
-        )
+        # Center the resized image on the canvas
+        x_offset = (thumbnail_size[0] - input_image.width) // 2
+        y_offset = (thumbnail_size[1] - input_image.height) // 2
+        canvas.paste(input_image, (x_offset, y_offset))
 
-        # Create a new canvas with a white background and paste the resized image
-        rounded_image = Image.new("RGB", target_size, "white")
-        rounded_image.paste(input_image, (0, 0))
-
-        # Apply the rounded corners mask
-        rounded_image.putalpha(mask)
-
-        # Convert the image to RGB (removes alpha channel)
-        final_image = rounded_image.convert("RGB")
-
-        # Save the resulting thumbnail to a file (JPEG format)
+        # Save the resulting thumbnail to a file
         output_path = "telegram_thumbnail.jpg"
-        final_image.save(output_path, format='JPEG')
-
-        # Upload the thumbnail and send the URL back to the user
+        canvas.save(output_path, format='JPEG')
         thumb = imgclient.upload(file=f"{output_path}", expiration=3600)
-        await message.reply_text(f"Thumbnail URL: {thumb.url}")
-
-        # Cleanup: Remove the saved file
+        await message.reply_text(f"{thumb.url}")
         os.remove(output_path)
-
-        # Delete the bot's original message after processing
         await auto_delete_message(bot_message, message)
     except Exception as e:
-        await message.reply_text(f"An error occurred: {e}")
+        await message.reply_text(f"An error occurred: {e}")      
 
 async def main():
     await asyncio.create_task(process_queue())
