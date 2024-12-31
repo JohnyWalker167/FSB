@@ -17,6 +17,9 @@ from inspect import signature
 from motor.motor_asyncio import AsyncIOMotorClient 
 from html import escape
 from asyncio import Queue
+from concurrent.futures import ThreadPoolExecutor
+
+THREADPOOL = ThreadPoolExecutor(max_workers = 1000)
 
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
@@ -70,6 +73,11 @@ user = Client(
 bot_loop = bot.loop
 bot_username = bot.me.username
 AsyncIOScheduler(timezone = str(get_localzone()), event_loop = bot_loop)
+
+async def sync_to_async(func, *args, wait=True, **kwargs):
+    pfunc = partial(func, *args, **kwargs)
+    future = bot_loop.run_in_executor(THREADPOOL, pfunc)
+    return await future if wait else future
 
 @bot.on_message(filters.private & filters.command("start"))
 async def start_command(client, message):
@@ -329,7 +337,7 @@ async def process_image(input_content, des_dir):
         canvas.paste(input_image, (x_offset, y_offset))
 
         # Save the resulting thumbnail
-        canvas.save(des_dir, "JPEG")
+        await sync_to_async(canvas.save, des_dir, "JPEG")
     except Exception as e:
         logger.error(f"Image Processing Error: {e}")
         return None
