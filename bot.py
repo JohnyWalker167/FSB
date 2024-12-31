@@ -380,7 +380,7 @@ async def process_image(photo_dir):
         canvas.paste(input_image, (x_offset, y_offset))
 
         # Save the resulting thumbnail to a file
-        await sync_to_async(canvas.save, des_dir, "JPEG")
+        await sync_to_async(lambda: canvas.save(des_dir, "JPEG"))()
     except Exception as e:
         logger.error(f"Image Processing Error: {e}")
         return None
@@ -388,7 +388,6 @@ async def process_image(photo_dir):
         await aioremove(photo_dir)
 
     return des_dir
-
 
 async def main():
     await asyncio.create_task(process_queue())
