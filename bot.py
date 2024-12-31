@@ -1,13 +1,9 @@
 import os
 import asyncio
-import aiofiles
 import imgbbpy
 import time
-import requests
-from os import path as ospath
-from PIL import Image
-from io import BytesIO
 from tzlocal import get_localzone
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import Client, enums, filters, utils as pyroutils
 from pyromod import listen
@@ -16,7 +12,6 @@ from utility import *
 from inspect import signature
 from motor.motor_asyncio import AsyncIOMotorClient 
 from html import escape
-from functools import partial
 from asyncio import Queue
 
 pyroutils.MIN_CHAT_ID = -999999999999
@@ -71,11 +66,6 @@ user = Client(
 bot_loop = bot.loop
 bot_username = bot.me.username
 AsyncIOScheduler(timezone = str(get_localzone()), event_loop = bot_loop)
-
-async def sync_to_async(func, *args, wait=True, **kwargs):
-    pfunc = partial(func, *args, **kwargs)
-    future = bot_loop.run_in_executor(THREADPOOL, pfunc)
-    return await future if wait else future
 
 @bot.on_message(filters.private & filters.command("start"))
 async def start_command(client, message):
@@ -316,37 +306,6 @@ async def log_command(client, message):
         await auto_delete_message(message, reply)
     except Exception as e:
         await bot.send_message(user_id, f"Failed to send log file. Error: {str(e)}")
-
-@bot.on_message(filters.command("thumb") & filters.user(OWNER_ID))
-async def thumb_command(client, message):
-    try:
-        bot_message = await message.reply_text('send thumbnail')
-        # Listen for a photo message from the same user
-        user_message = await bot.listen(message.chat.id)  # Without filters argument
-        image_link = user_message.text.strip()
-        response = requests.get(image_link)
-        input_image = Image.open(BytesIO(response.content))
-        # Resize the image to fit within 320x320 while maintaining aspect ratio
-        thumbnail_size = (320, 320)
-        input_image.thumbnail(thumbnail_size, Image.Resampling.LANCZOS)
-
-        # Create a new blank canvas with white background
-        canvas = Image.new('RGB', thumbnail_size, 'white')
-
-        # Center the resized image on the canvas
-        x_offset = (thumbnail_size[0] - input_image.width) // 2
-        y_offset = (thumbnail_size[1] - input_image.height) // 2
-        canvas.paste(input_image, (x_offset, y_offset))
-
-        # Save the resulting thumbnail to a file
-        output_path = "telegram_thumbnail.jpg"
-        canvas.save(output_path, format='JPEG')
-        thumb = imgclient.upload(file=f"{output_path}", expiration=3600)
-        await message.reply_text(f"{thumb.url}")
-        os.remove(output_path)
-        await auto_delete_message(bot_message, message)
-    except Exception as e:
-        await message.reply_text(f"An error occurred: {e}")      
 
 async def main():
     await asyncio.create_task(process_queue())
