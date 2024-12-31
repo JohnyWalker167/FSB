@@ -360,7 +360,7 @@ async def thumb_command(client, message):
         final_image.save(output_path, format='JPEG')
 
         # Upload the thumbnail and send the URL back to the user
-        thumb = imgclient.upload(file=f"{output_path}", expiration=180)
+        thumb = imgclient.upload(file=f"{output_path}", expiration=3600)
         await message.reply_text(f"Thumbnail URL: {thumb.url}")
 
         # Cleanup: Remove the saved file
