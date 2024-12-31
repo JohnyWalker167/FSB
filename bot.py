@@ -4,10 +4,13 @@ import asyncio
 import aiofiles
 import imgbbpy
 import time
+from os import path as ospath
 from io import BytesIO
 from tzlocal import get_localzone
-from aiofiles.os import remove as aioremove
+from aiofiles import open as aiopen
+from aiofiles.os import remove as aioremove, path as aiopath, mkdir
 from functools import partial
+from aiohttp import ClientSession as aioClientSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import Client, enums, filters, utils as pyroutils
 from pyromod import listen
@@ -319,10 +322,37 @@ async def log_command(client, message):
     except Exception as e:
         await bot.send_message(user_id, f"Failed to send log file. Error: {str(e)}")
 
-async def process_image(input_content, des_dir):
+@bot.on_message(filters.private & filters.command("thumb") & filters.user(OWNER_ID))
+async def thumb_command(client, message):
+    des_dir = f"thumbnails/thumb.jpg"
     try:
-        # Load the input image from bytes
-        input_image = Image.open(BytesIO(input_content))
+        bot_message = await message.reply_text('send thumbnail')
+
+        # Listen for a photo message from the same user
+        user_message = await bot.listen(message.chat.id)  # Without filters argument
+        image_link = user_message.text.strip()
+
+        input_dir = await download_image_url(image_link)
+        thumb_dir = await process_image(input_dir, des_dir)
+
+        thumb = imgclient.upload(file=f"{thumb_dir}", expiration=3600)
+        await message.reply_text(
+                f"Thumbnail uploaded successfully!\n[View Thumbnail]({thumb['url']}) (Expires in 1 hour)",
+                disable_web_page_preview=True
+            )
+
+    except Exception as e:
+         await message.reply_text(f"Error in thumb gen {e}")
+    finally:
+            # Clean up the local thumbnail file
+            if os.path.exists(des_dir):
+                os.remove(des_dir)
+        
+async def process_image(input_dir, des_dir):
+    try:
+        async with aiofiles.open(input_dir, 'rb') as f:
+            content = await f.read()
+        input_image = Image.open(BytesIO(content))
 
         # Resize the image to fit within 320x320 while maintaining aspect ratio
         thumbnail_size = (320, 320)
@@ -336,54 +366,31 @@ async def process_image(input_content, des_dir):
         y_offset = (thumbnail_size[1] - input_image.height) // 2
         canvas.paste(input_image, (x_offset, y_offset))
 
-        # Save the resulting thumbnail
+        # Save the resulting thumbnail to a file
         await sync_to_async(canvas.save, des_dir, "JPEG")
     except Exception as e:
         logger.error(f"Image Processing Error: {e}")
         return None
-
+    finally:
+        await aioremove(input_dir)
     return des_dir
 
-
-@bot.on_message(filters.private & filters.command("thumb") & filters.user(OWNER_ID))
-async def start_command(client, message):
-    if len(message.command) < 2:
-        await message.reply_text("Please provide a valid image URL after the command.\nExample: `/thumb <image_url>`")
-        return
-
-    image_url = message.command[1]
-    file_name = "thumbnail"
-    des_dir = f"thumbnails/{file_name}.jpg"
-
-    try:
-        # Ensure the output directory exists
-        os.makedirs(os.path.dirname(des_dir), exist_ok=True)
-
-        # Download the image from the URL
-        async with aiohttp.ClientSession() as session:
-            async with session.get(image_url) as response:
-                if response.status != 200:
-                    await message.reply_text("Failed to download the image. Please check the URL.")
-                    return
-
-                input_content = await response.read()
-
-        # Process the image to create a thumbnail
-        result = await process_image(input_content, des_dir)
-
-        if result:
-            # Upload the thumbnail to ImgBB
-            thumb = await imgclient.upload(file=result, name=file_name, expiration=3600)
-            await message.reply_text(f"Thumbnail uploaded successfully!\n[View Thumbnail]({thumb['url']})", disable_web_page_preview=True)
-        else:
-            await message.reply_text("Failed to process the image.")
-    except Exception as e:
-        logger.error(f"Error handling thumbnail creation: {e}")
-        await message.reply_text("An error occurred while processing the image.")
-    finally:
-        # Clean up the local thumbnail file
-        if os.path.exists(des_dir):
-            os.remove(des_dir)
+async def download_image_url(url):
+    path = "Images/"
+    if not await aiopath.isdir(path):
+        await mkdir(path)
+    image_name = url.split('/')[-1]
+    des_dir = ospath.join(path, image_name)
+    async with aioClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                async with aiopen(des_dir, 'wb') as file:
+                    async for chunk in response.content.iter_chunked(1024):
+                        await file.write(chunk)
+                logger.info(f"Image Downloaded Successfully as {image_name}")
+            else:
+                logger.error(f"Failed to Download Image from {url}")
+    return des_dir
 
 async def main():
     await asyncio.create_task(process_queue())
