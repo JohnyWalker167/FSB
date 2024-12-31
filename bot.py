@@ -3,9 +3,9 @@ import asyncio
 import aiofiles
 import imgbbpy
 import time
+import requests
 from os import path as ospath
 from PIL import Image
-from aiohttp import ClientSession as aioClientSession
 from io import BytesIO
 from tzlocal import get_localzone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -18,11 +18,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from html import escape
 from functools import partial
 from asyncio import Queue
-from concurrent.futures import ThreadPoolExecutor
-from aiofiles import open as aiopen
-from aiofiles.os import remove as aioremove, path as aiopath, mkdir
-
-THREADPOOL = ThreadPoolExecutor(max_workers = 1000)
 
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
@@ -329,44 +324,8 @@ async def thumb_command(client, message):
         # Listen for a photo message from the same user
         user_message = await bot.listen(message.chat.id)  # Without filters argument
         image_link = user_message.text.strip()
-        image_dir = await download_image_url(image_link)
-        thumb_dir = await process_image(image_dir)
-        thumb = imgclient.upload(url=f"{thumb_dir}", expiration=3600)
-        await message.reply_text(f"{thumb.url}")
-        await auto_delete_message(bot_message, message)
-    except Exception as e:
-        await message.reply_text(f"An error occurred: {e}")      
-
-async def download_image_url(url):
-    path = "Images/"
-    if not await aiopath.isdir(path):
-        await mkdir(path)
-    image_name = url.split('/')[-1]
-    des_dir = ospath.join(path, image_name)
-    async with aioClientSession() as session:
-        async with session.get(url) as response:
-            if response.status == 200:
-                async with aiopen(des_dir, 'wb') as file:
-                    async for chunk in response.content.iter_chunked(1024):
-                        await file.write(chunk)
-                logger.info(f"Image Downloaded Successfully as {image_name}")
-            else:
-                logger.error(f"Failed to Download Image from {url}")
-    return des_dir          
-
-
-async def process_image(photo_dir):
-    path = "Thumbnails"
-    if not await aiopath.isdir(path):
-        await mkdir(path)
-
-    des_dir = os.path.join(path, f'{time()}.jpg')
-
-    try:
-        async with aiofiles.open(photo_dir, 'rb') as f:
-            content = await f.read()
-        input_image = Image.open(BytesIO(content))
-
+        response = requests.get(image_link)
+        input_image = Image.open(BytesIO(response.content))
         # Resize the image to fit within 320x320 while maintaining aspect ratio
         thumbnail_size = (320, 320)
         input_image.thumbnail(thumbnail_size, Image.Resampling.LANCZOS)
@@ -380,14 +339,14 @@ async def process_image(photo_dir):
         canvas.paste(input_image, (x_offset, y_offset))
 
         # Save the resulting thumbnail to a file
-        await sync_to_async(lambda: canvas.save(des_dir, "JPEG"))()
+        output_path = "telegram_thumbnail.jpg"
+        canvas.save(output_path, format='JPEG')
+        thumb = imgclient.upload(file=f"{output_path}", expiration=180)
+        await message.reply_text(f"{thumb.url}")
+        os.remove(output_path)
+        await auto_delete_message(bot_message, message)
     except Exception as e:
-        logger.error(f"Image Processing Error: {e}")
-        return None
-    finally:
-        await aioremove(photo_dir)
-
-    return des_dir
+        await message.reply_text(f"An error occurred: {e}")      
 
 async def main():
     await asyncio.create_task(process_queue())
