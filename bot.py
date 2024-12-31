@@ -375,7 +375,7 @@ async def start_command(client, message):
 
         if result:
             # Upload the thumbnail to ImgBB
-            thumb = await imgclient.upload(file=result, name=file_name)
+            thumb = await imgclient.upload(file=result, name=file_name, expiration=3600)
             await message.reply_text(f"Thumbnail uploaded successfully!\n[View Thumbnail]({thumb['url']})", disable_web_page_preview=True)
         else:
             await message.reply_text("Failed to process the image.")
