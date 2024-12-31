@@ -10,3 +10,4 @@ tzlocal
 apscheduler
 imgbbpy
 mutagen
+aiofiles

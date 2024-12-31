@@ -1,9 +1,14 @@
 import os
+import aiohttp
 import asyncio
+import aiofiles
 import imgbbpy
 import time
+from io import BytesIO
 from tzlocal import get_localzone
-
+from aiofiles import remove as aioremove
+from asyncio import run_coroutine_threadsafe
+from functools import partial
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import Client, enums, filters, utils as pyroutils
 from pyromod import listen
@@ -13,11 +18,14 @@ from inspect import signature
 from motor.motor_asyncio import AsyncIOMotorClient 
 from html import escape
 from asyncio import Queue
+from concurrent.futures import ThreadPoolExecutor
 
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
 
 last_update = {"current": 0, "time": time.time()}
+
+THREADPOOL = ThreadPoolExecutor(max_workers = 1000)
 
 THUMBNAIL_COUNT = 9
 GRID_COLUMNS = 3 # Number of columns in the grid
@@ -66,6 +74,12 @@ user = Client(
 bot_loop = bot.loop
 bot_username = bot.me.username
 AsyncIOScheduler(timezone = str(get_localzone()), event_loop = bot_loop)
+
+
+async def sync_to_async(func, *args, wait=True, **kwargs):
+    pfunc = partial(func, *args, **kwargs)
+    future = bot_loop.run_in_executor(THREADPOOL, pfunc)
+    return await future if wait else future
 
 @bot.on_message(filters.private & filters.command("start"))
 async def start_command(client, message):
@@ -306,6 +320,72 @@ async def log_command(client, message):
         await auto_delete_message(message, reply)
     except Exception as e:
         await bot.send_message(user_id, f"Failed to send log file. Error: {str(e)}")
+
+async def process_image(input_content, des_dir):
+    try:
+        # Load the input image from bytes
+        input_image = Image.open(BytesIO(input_content))
+
+        # Resize the image to fit within 320x320 while maintaining aspect ratio
+        thumbnail_size = (320, 320)
+        input_image.thumbnail(thumbnail_size, Image.Resampling.LANCZOS)
+
+        # Create a new blank canvas with white background
+        canvas = Image.new('RGB', thumbnail_size, 'white')
+
+        # Center the resized image on the canvas
+        x_offset = (thumbnail_size[0] - input_image.width) // 2
+        y_offset = (thumbnail_size[1] - input_image.height) // 2
+        canvas.paste(input_image, (x_offset, y_offset))
+
+        # Save the resulting thumbnail
+        canvas.save(des_dir, "JPEG")
+    except Exception as e:
+        logger.error(f"Image Processing Error: {e}")
+        return None
+
+    return des_dir
+
+
+@bot.on_message(filters.private & filters.command("thumb") & filters.user(OWNER_ID))
+async def start_command(client, message):
+    if len(message.command) < 2:
+        await message.reply_text("Please provide a valid image URL after the command.\nExample: `/thumb <image_url>`")
+        return
+
+    image_url = message.command[1]
+    file_name = "thumbnail"
+    des_dir = f"thumbnails/{file_name}.jpg"
+
+    try:
+        # Ensure the output directory exists
+        os.makedirs(os.path.dirname(des_dir), exist_ok=True)
+
+        # Download the image from the URL
+        async with aiohttp.ClientSession() as session:
+            async with session.get(image_url) as response:
+                if response.status != 200:
+                    await message.reply_text("Failed to download the image. Please check the URL.")
+                    return
+
+                input_content = await response.read()
+
+        # Process the image to create a thumbnail
+        result = await process_image(input_content, des_dir)
+
+        if result:
+            # Upload the thumbnail to ImgBB
+            thumb = await imgclient.upload(file=result, name=file_name)
+            await message.reply_text(f"Thumbnail uploaded successfully!\n[View Thumbnail]({thumb['url']})", disable_web_page_preview=True)
+        else:
+            await message.reply_text("Failed to process the image.")
+    except Exception as e:
+        logger.error(f"Error handling thumbnail creation: {e}")
+        await message.reply_text("An error occurred while processing the image.")
+    finally:
+        # Clean up the local thumbnail file
+        if os.path.exists(des_dir):
+            os.remove(des_dir)
 
 async def main():
     await asyncio.create_task(process_queue())
