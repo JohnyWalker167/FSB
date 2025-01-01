@@ -296,7 +296,7 @@ async def handle_file(client, message):
  '''
 
 # Delete Commmand
-@bot.on_message(filters.command("delete") & filters.user(OWNER_USERNAME))
+@bot.on_message(filters.command("delete") & filters.user(OWNER_ID))
 async def delete_command(client, message):
     try:
         await message.reply_text("Enter channel_id")
