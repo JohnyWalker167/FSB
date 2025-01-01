@@ -53,7 +53,7 @@ bot = Client(
     parse_mode=enums.ParseMode.HTML
 ).start()
 
-'''
+
 user = Client(
                 "user",
                 api_id=int(API_ID),
@@ -61,7 +61,7 @@ user = Client(
                 session_string=STRING_SESSION,
                 no_updates = True
 ).start()
-'''
+
 
 bot_loop = bot.loop
 bot_username = bot.me.username
@@ -294,6 +294,27 @@ async def handle_file(client, message):
         bot_message = await message.reply_text(f"An error occurred: {e}")
         await auto_delete_message(message, bot_message)
  '''
+
+# Delete Commmand
+@bot.on_message(filters.command("delete") & filters.user(OWNER_USERNAME))
+async def delete_command(client, message):
+    try:
+        await message.reply_text("Enter channel_id")
+        channel_id = int((await bot.listen(message.chat.id)).text)
+
+        await message.reply_text("Enter count")
+        limit = int((await bot.listen(message.chat.id)).text)
+
+        await bot.send_message(channel_id, "Hi")
+
+        try:
+            async for message in user.get_chat_history(channel_id, limit):
+                await message.delete()
+        except Exception as e:
+            logger.error(f"Error deleting messages: {e}")
+        await user.send_message(channel_id, "done")
+    except Exception as e:
+        logger.error(f"Error : {e}")
 
 # Get Log Command
 @bot.on_message(filters.command("log") & filters.user(OWNER_ID))
